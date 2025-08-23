@@ -52,35 +52,21 @@ async function ensureDirectoryExists(directory: string) {
 }
 
 async function downloadAllImages() {
-  // await ensureDirectoryExists(downloadDirectory);
+  await ensureDirectoryExists(downloadDirectory);
 
-  // for (const imageFile of imageFiles) {
-  //   const imageUrl = galleryBaseUrl + imageFile;
-  //   const filePath = path.join(downloadDirectory, imageFile);
+  for (const imageFile of imageFiles) {
+    const imageUrl = galleryBaseUrl + imageFile;
+    const filePath = path.join(downloadDirectory, imageFile);
 
-  //   try {
-  //     await downloadImage(imageUrl, filePath);
-  //     console.log(`Downloaded ${imageFile} to ${filePath}`);
-  //   } catch (err) {
-  //     console.error(`Failed to download ${imageFile}: ${err}`);
-  //   }
-  // }
-
-  // console.log('All images downloaded!');
-
-  console.log('Reading images from local directory');
-  const imagesDir = path.join(process.cwd(), 'public', 'images', 'gallery');
-
-  fs.readdir(imagesDir, (err, files) => {
-    if (err) {
-      console.error("Could not list the directory.", err);
-      process.exit(1);
+    try {
+      await downloadImage(imageUrl, filePath);
+      console.log(`Downloaded ${imageFile} to ${filePath}`);
+    } catch (err) {
+      console.error(`Failed to download ${imageFile}: ${err}`);
     }
+  }
 
-    files.forEach(file => {
-      console.log(file);
-    });
-  });
+  console.log('All images downloaded!');
 }
 
 downloadAllImages();
