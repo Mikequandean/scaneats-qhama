@@ -203,10 +203,6 @@ export const ScanView = ({ onNavigate }: { onNavigate: (view: View) => void }) =
       
       const scanResult = await response.json();
       
-      toast({
-          title: 'Success!',
-          description: `Identified: ${scanResult.name}.`,
-      });
       onNavigate('meal-plan');
 
     } catch (error: any) {
