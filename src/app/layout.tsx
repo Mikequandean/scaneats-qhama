@@ -1,3 +1,4 @@
+
 import type { Metadata, Viewport } from 'next';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import './globals.css';
@@ -48,14 +49,14 @@ export default function RootLayout({
         {/* PWA and Universal Icons */}
         <link
           rel="icon"
-          href="https://gallery.scaneats.app/images/ScanEatsLogo.png"
+          href="/images/gallery/ScanEatsLogo.png"
           type="image/png"
         />
 
         {/* Apple Touch Icon (iOS Homescreen) & Fullscreen settings */}
         <link
           rel="apple-touch-icon"
-          href="https://gallery.scaneats.app/images/ScanEatsLogo.png"
+          href="/images/gallery/ScanEatsLogo.png"
         />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
