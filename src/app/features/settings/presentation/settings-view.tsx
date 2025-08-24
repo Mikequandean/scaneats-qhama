@@ -43,6 +43,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { API_BASE_URL } from '@/app/shared/lib/api';
+import type { View } from '@/app/features/dashboard/dashboard.types';
 
 const SettingsItem = ({
   icon: Icon,
@@ -74,7 +75,11 @@ const SettingsItem = ({
   );
 
   if (href) {
-    return <Link href={href}>{content}</Link>;
+    return <Link href={href}><div className="w-full">{content}</div></Link>;
+  }
+  
+  if (onClick) {
+      return <button onClick={onClick} className="w-full text-left">{content}</button>
   }
 
   return content;
@@ -100,8 +105,10 @@ const DestructiveSettingsItem = ({
 
 export const SettingsView = ({
   onNavigateToProfile,
+  onNavigate,
 }: {
   onNavigateToProfile: () => void;
+  onNavigate: (view: View) => void;
 }) => {
   const router = useRouter();
   const { toast } = useToast();
@@ -429,7 +436,7 @@ export const SettingsView = ({
              <SettingsItem
               icon={CircleDollarSign}
               label="Buy Credits"
-              href="/credits"
+              onClick={() => onNavigate('credits')}
             />
             {isSubscribed ? (
                 <AlertDialog>

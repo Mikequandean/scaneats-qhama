@@ -14,6 +14,7 @@ import { ProfileView } from '@/app/features/profile/presentation/profile-view';
 import { SettingsView } from '@/app/features/settings/presentation/settings-view';
 import { MealPlanView } from '@/app/features/meal-plan/presentation/meal-plan-view';
 import { BottomNav } from '@/app/shared/components/bottom-nav';
+import CreditsPage from '@/app/credits/page';
 
 export default function DashboardPage() {
   const [activeView, setActiveView] = useState<View>('home');
@@ -36,8 +37,10 @@ export default function DashboardPage() {
         return <ProfileView />;
       case 'settings':
         return (
-          <SettingsView onNavigateToProfile={() => setActiveView('profile')} />
+          <SettingsView onNavigateToProfile={() => setActiveView('profile')} onNavigate={(view) => setActiveView(view)} />
         );
+      case 'credits':
+        return <CreditsPage />;
       default:
         return <HomeView onNavigate={handleNavigate} />;
     }

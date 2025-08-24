@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Home, Mic, User, Settings, UtensilsCrossed } from 'lucide-react';
+import { Home, Mic, User, Settings, UtensilsCrossed, CircleDollarSign } from 'lucide-react';
 import { cn } from '@/app/shared/lib/utils';
 import type { View } from '@/app/features/dashboard/dashboard.types';
 
@@ -20,8 +20,8 @@ interface BottomNavProps {
 }
 
 export function BottomNav({ activeView, onNavigate }: BottomNavProps) {
-  // The 'scan' view doesn't have a button, but this keeps the UI consistent
-  if (activeView === 'scan') {
+  // The 'scan' and 'credits' views don't have a button, but this keeps the UI consistent
+  if (activeView === 'scan' || activeView === 'credits') {
     return null;
   }
   
