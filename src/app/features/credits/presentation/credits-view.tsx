@@ -2,9 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { useToast } from '@/app/shared/hooks/use-toast';
 import { useUserData } from '@/app/shared/context/user-data-context';
 import { Loader2, ArrowLeft } from 'lucide-react';
@@ -20,6 +18,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { API_BASE_URL } from '@/app/shared/lib/api';
+import type { View } from '@/app/features/dashboard/dashboard.types';
 
 type CreditProduct = {
   id: number;
@@ -34,8 +33,7 @@ type GeoData = {
   flagUrl: string;
 };
 
-export default function CreditsPage() {
-  const router = useRouter();
+export const CreditsView = ({ onNavigate }: { onNavigate: (view: View) => void }) => {
   const { toast } = useToast();
   const { profile, setSubscriptionModalOpen } = useUserData();
 
@@ -158,7 +156,6 @@ export default function CreditsPage() {
         title: 'Login Required',
         description: 'Please log in to purchase credits.',
       });
-      router.push('/login');
       setIsPurchasing(null);
       return;
     }
@@ -224,6 +221,10 @@ export default function CreditsPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center overflow-y-auto bg-black p-5 text-gray-200">
+       <button onClick={() => onNavigate('settings')} className="absolute top-8 left-8 z-10 flex items-center gap-2 text-sm text-gray-300 hover:text-white">
+        <ArrowLeft size={16} /> Back to Settings
+      </button>
+
        <div className="absolute top-8 right-8 z-10">
           {!isGeoLoading && geoData && (
               <Image 

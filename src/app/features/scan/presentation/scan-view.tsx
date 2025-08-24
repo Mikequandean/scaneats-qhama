@@ -7,7 +7,6 @@ import {
   useRef,
   useCallback,
 } from 'react';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -26,7 +25,6 @@ export const ScanView = ({ onNavigate }: { onNavigate: (view: View) => void }) =
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isMobile = useIsMobile();
-  const router = useRouter();
 
   const [cameraState, setCameraState] = useState<
     'idle' | 'starting' | 'running' | 'denied' | 'error' | 'nocamera'
@@ -139,7 +137,7 @@ export const ScanView = ({ onNavigate }: { onNavigate: (view: View) => void }) =
             title: 'Authentication Error',
             description: 'You are not logged in. Please log in again.',
         });
-        router.push('/login');
+        onNavigate('home'); // Redirect to a safe view
         return;
     }
     
@@ -164,7 +162,6 @@ export const ScanView = ({ onNavigate }: { onNavigate: (view: View) => void }) =
       });
 
       if (response.status === 401) {
-        router.push('/login');
         throw new Error('Session Expired. Please log in again.');
       }
       
@@ -179,7 +176,7 @@ export const ScanView = ({ onNavigate }: { onNavigate: (view: View) => void }) =
             title: 'Out of Credits',
             description: 'You have used all your credits. Please buy more to continue scanning.',
             action: (
-              <Button onClick={() => router.push('/credits')} className="gap-2">
+              <Button onClick={() => onNavigate('credits')} className="gap-2">
                 <CircleDollarSign />
                 Buy Credits
               </Button>
@@ -206,21 +203,23 @@ export const ScanView = ({ onNavigate }: { onNavigate: (view: View) => void }) =
       onNavigate('meal-plan');
 
     } catch (error: any) {
-      if (
-        error.message !== 'Subscription required' && 
-        error.message !== 'Out of credits' &&
-        !error.message.includes('Session Expired')
-      ) {
-        toast({
-          variant: 'destructive',
-          title: 'Scan Failed',
-          description: error.message || 'An unexpected error occurred.',
-        });
+        if (error.message.includes('Session Expired')) {
+             toast({ variant: 'destructive', title: 'Session Expired', description: 'Please log in again.' });
+             onNavigate('home'); // or login
+        } else if (
+            error.message !== 'Subscription required' && 
+            error.message !== 'Out of credits'
+        ) {
+            toast({
+              variant: 'destructive',
+              title: 'Scan Failed',
+              description: error.message || 'An unexpected error occurred.',
+            });
       }
     } finally {
       setIsSending(false);
     }
-  }, [capturedImage, toast, router, setSubscriptionModalOpen, onNavigate]);
+  }, [capturedImage, toast, setSubscriptionModalOpen, onNavigate]);
   
   return (
     <>

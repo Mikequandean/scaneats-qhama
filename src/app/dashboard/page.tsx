@@ -13,8 +13,8 @@ import { SallyView } from '@/app/features/sally/presentation/sally-view';
 import { ProfileView } from '@/app/features/profile/presentation/profile-view';
 import { SettingsView } from '@/app/features/settings/presentation/settings-view';
 import { MealPlanView } from '@/app/features/meal-plan/presentation/meal-plan-view';
+import { CreditsView } from '@/app/features/credits/presentation/credits-view';
 import { BottomNav } from '@/app/shared/components/bottom-nav';
-import CreditsPage from '@/app/credits/page';
 
 export default function DashboardPage() {
   const [activeView, setActiveView] = useState<View>('home');
@@ -40,7 +40,7 @@ export default function DashboardPage() {
           <SettingsView onNavigateToProfile={() => setActiveView('profile')} onNavigate={(view) => setActiveView(view)} />
         );
       case 'credits':
-        return <CreditsPage />;
+        return <CreditsView onNavigate={handleNavigate} />;
       default:
         return <HomeView onNavigate={handleNavigate} />;
     }

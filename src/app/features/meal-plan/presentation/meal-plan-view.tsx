@@ -8,17 +8,17 @@ import { MealApiRepository } from '../data/meal-api.repository';
 import { MealService } from '../application/meal.service';
 import type { ScannedFood } from '@/app/domain/scanned-food';
 import { useUserData } from '@/app/shared/context/user-data-context';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/app/shared/lib/utils';
 import { API_BASE_URL } from '@/app/shared/lib/api';
+import type { View } from '@/app/features/dashboard/dashboard.types';
 
 const mealRepository = new MealApiRepository();
 const mealService = new MealService(mealRepository);
 
-export const MealPlanView = () => {
+export const MealPlanView = ({ onNavigate }: { onNavigate: (view: View) => void }) => {
   const { toast } = useToast();
   const { profile, setSubscriptionModalOpen, fetchProfile } = useUserData();
   const [scannedFood, setScannedFood] = useState<ScannedFood | null>(null);
@@ -29,7 +29,6 @@ export const MealPlanView = () => {
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const router = useRouter();
   const [sallyProgress, setSallyProgress] = useState(0);
 
   const fetchMealPlan = useCallback(async () => {
@@ -55,7 +54,7 @@ export const MealPlanView = () => {
           title: 'Session Expired',
           description: 'Please log in to continue.',
         });
-        router.push('/login');
+        // The layout will handle the redirect
       } else {
         toast({
           variant: 'destructive',
@@ -66,7 +65,7 @@ export const MealPlanView = () => {
     } finally {
       setIsMealLoading(false);
     }
-  }, [router, toast]);
+  }, [toast]);
 
   useEffect(() => {
     fetchMealPlan();
@@ -156,14 +155,9 @@ export const MealPlanView = () => {
     setSallyResponse(null);
 
     try {
-      // First, ensure we have microphone permission by requesting it explicitly.
-      // This will prompt the user if permission hasn't been granted yet.
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // We can immediately stop the tracks as we only needed to get permission.
-      // The SpeechRecognition API will handle the actual stream internally.
       stream.getTracks().forEach(track => track.stop());
 
-      // Now that we have confirmed permission, start the recognition process.
       setIsRecording(true);
       recognitionRef.current.start();
     } catch (error) {
@@ -202,7 +196,7 @@ export const MealPlanView = () => {
         title: 'Authentication Error',
         description: 'Please log in again.',
       });
-      router.push('/login');
+      // The layout will handle the redirect
       setIsRecording(false);
       return;
     }
@@ -242,7 +236,7 @@ export const MealPlanView = () => {
             'You have used all your credits. Please buy more to continue talking to Sally.',
           action: (
             <Button
-              onClick={() => router.push('/credits')}
+              onClick={() => onNavigate('credits')}
               className="gap-2"
             >
               <CircleDollarSign />
@@ -291,7 +285,6 @@ export const MealPlanView = () => {
         const errorData = await error.json();
         errorMessage = errorData.message || errorData.title || errorMessage;
       } catch (jsonError) {
-        // Fallback if the error response isn't JSON
         if (error instanceof Error) {
             errorMessage = error.message;
         }

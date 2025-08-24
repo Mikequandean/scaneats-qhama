@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -12,6 +11,7 @@ import { useToast } from '@/app/shared/hooks/use-toast';
 import { useUserData } from '@/app/shared/context/user-data-context';
 import { cn } from '@/app/shared/lib/utils';
 import { API_BASE_URL } from '@/app/shared/lib/api';
+import type { View } from '@/app/features/dashboard/dashboard.types';
 
 declare global {
   interface Window {
@@ -20,8 +20,7 @@ declare global {
   }
 }
 
-export const SallyView = () => {
-  const router = useRouter();
+export const SallyView = ({ onNavigate }: { onNavigate: (view: View) => void }) => {
   const [sallyResponse, setSallyResponse] = useState<string>(
     "I'm your personal assistant, ask me anything about your body."
   );
@@ -120,14 +119,8 @@ export const SallyView = () => {
     setSallyResponse('');
 
     try {
-      // First, ensure we have microphone permission by requesting it explicitly.
-      // This will prompt the user if permission hasn't been granted yet.
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // We can immediately stop the tracks as we only needed to get permission.
-      // The SpeechRecognition API will handle the actual stream internally.
       stream.getTracks().forEach(track => track.stop());
-
-      // Now that we have confirmed permission, start the recognition process.
       setIsRecording(true);
       recognitionRef.current.start();
     } catch (error) {
@@ -165,7 +158,6 @@ export const SallyView = () => {
         title: 'Authentication Error',
         description: 'Please log in again.',
       });
-      router.push('/login');
       setIsRecording(false);
       return;
     }
@@ -205,7 +197,7 @@ export const SallyView = () => {
             'You have used all your credits. Please buy more to continue talking to Sally.',
           action: (
             <Button
-              onClick={() => router.push('/credits')}
+              onClick={() => onNavigate('credits')}
               className="gap-2"
             >
               <CircleDollarSign />
@@ -254,7 +246,6 @@ export const SallyView = () => {
         const errorData = await error.json();
         errorMessage = errorData.message || errorData.title || errorMessage;
       } catch (jsonError) {
-        // Fallback if the error response isn't JSON
         if (error instanceof Error) {
             errorMessage = error.message;
         }
