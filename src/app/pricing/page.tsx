@@ -131,7 +131,7 @@ export default function PricingPage() {
           },
           body: JSON.stringify({
             email: email,
-            planCode: 'PLN_798x61l5wzjei3g', // Ensure this is a valid plan code in your Paystack account
+            planCode: 'PLN_so2f03hi5aa779d', // Ensure this is a valid plan code in your Paystack account
           }),
         }
       );
