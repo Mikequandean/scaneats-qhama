@@ -472,7 +472,7 @@ export const SettingsView = ({
             ) : (
                 <SettingsItem
                   icon={Repeat}
-                  label="Manage Subscription"
+                  label="Activate Your Account"
                   href="/pricing"
                 />
             )}
