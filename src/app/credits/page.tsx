@@ -168,6 +168,14 @@ export default function CreditsPage() {
     }
 
     try {
+      const payload = {
+        Email: email,
+        Id: product.id,
+        Credit: product.credit,
+        Price: product.price,
+        Description: product.description
+      };
+      
       const response = await fetch(
         `${API_BASE_URL}/api/credit/purchase`,
         {
@@ -176,10 +184,7 @@ export default function CreditsPage() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            email: email,
-            creditInformation: product,
-          }),
+          body: JSON.stringify(payload),
         }
       );
 
@@ -195,6 +200,8 @@ export default function CreditsPage() {
           let errorMessage = 'An unknown error occurred.';
           if (response.status === 401) {
               errorMessage = 'Your session has expired. Please log in again.';
+          } else if (response.status === 403) {
+              errorMessage = 'You are not authorized to make this purchase. Please contact support.';
           } else if (response.status >= 500) {
               errorMessage = 'Our servers are experiencing issues. Please try again later.';
           } else {
