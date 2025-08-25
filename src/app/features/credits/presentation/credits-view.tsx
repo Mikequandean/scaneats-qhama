@@ -225,11 +225,11 @@ export const CreditsView = ({ onNavigate }: { onNavigate: (view: View) => void }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center overflow-y-auto bg-black p-5 text-gray-200">
-       <button onClick={() => onNavigate('settings')} className="absolute top-12 left-8 z-10 flex items-center gap-2 text-sm text-gray-300 hover:text-white">
+       <button onClick={() => onNavigate('settings')} className="absolute top-20 left-8 z-10 flex items-center gap-2 text-sm text-gray-300 hover:text-white">
         <ArrowLeft size={16} /> Back to Settings
       </button>
 
-       <div className="absolute top-12 right-8 z-10">
+       <div className="absolute top-20 right-8 z-10">
           {!isGeoLoading && geoData && (
               <Image 
                 src={geoData.flagUrl} 
