@@ -30,9 +30,9 @@ export default function DashboardPage() {
       case 'scan':
         return <ScanView onNavigate={handleNavigate} />;
       case 'meal-plan':
-        return <MealPlanView />;
+        return <MealPlanView onNavigate={handleNavigate} />;
       case 'sally':
-        return <SallyView />;
+        return <SallyView onNavigate={handleNavigate} />;
       case 'profile':
         return <ProfileView />;
       case 'settings':
