@@ -162,12 +162,12 @@ export const CreditsView = ({ onNavigate }: { onNavigate: (view: View) => void }
 
     try {
       const payload = {
-        email: email,
-        creditInformation: {
-            id: product.id,
-            credit: product.credit,
-            price: product.price,
-            description: product.description,
+        Email: email,
+        CreditInformation: {
+            Id: product.id,
+            Credit: product.credit,
+            Price: product.price,
+            Description: product.description,
         }
       };
       
@@ -197,6 +197,8 @@ export const CreditsView = ({ onNavigate }: { onNavigate: (view: View) => void }
               errorMessage = 'Your session has expired. Please log in again.';
           } else if (response.status === 403) {
               errorMessage = 'You are not authorized to make this purchase. Please contact support.';
+          } else if (response.status === 400) {
+              errorMessage = 'The purchase request was invalid. Please check the details and try again.';
           } else if (response.status >= 500) {
               errorMessage = 'Our servers are experiencing issues. Please try again later.';
           } else {
@@ -223,11 +225,11 @@ export const CreditsView = ({ onNavigate }: { onNavigate: (view: View) => void }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center overflow-y-auto bg-black p-5 text-gray-200">
-       <button onClick={() => onNavigate('settings')} className="absolute top-8 left-8 z-10 flex items-center gap-2 text-sm text-gray-300 hover:text-white">
+       <button onClick={() => onNavigate('settings')} className="absolute top-12 left-8 z-10 flex items-center gap-2 text-sm text-gray-300 hover:text-white">
         <ArrowLeft size={16} /> Back to Settings
       </button>
 
-       <div className="absolute top-8 right-8 z-10">
+       <div className="absolute top-12 right-8 z-10">
           {!isGeoLoading && geoData && (
               <Image 
                 src={geoData.flagUrl} 
@@ -294,5 +296,3 @@ export const CreditsView = ({ onNavigate }: { onNavigate: (view: View) => void }
     </div>
   );
 }
-
-    
