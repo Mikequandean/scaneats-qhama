@@ -162,11 +162,13 @@ export const CreditsView = ({ onNavigate }: { onNavigate: (view: View) => void }
 
     try {
       const payload = {
-        Email: email,
-        Id: product.id,
-        Credit: product.credit,
-        Price: product.price,
-        Description: product.description
+        email: email,
+        creditInformation: {
+            id: product.id,
+            credit: product.credit,
+            price: product.price,
+            description: product.description,
+        }
       };
       
       const response = await fetch(
@@ -292,3 +294,5 @@ export const CreditsView = ({ onNavigate }: { onNavigate: (view: View) => void }
     </div>
   );
 }
+
+    
