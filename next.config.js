@@ -10,15 +10,6 @@ const withPWA = require("@ducanh2912/next-pwa").default({
 });
 
 const nextConfig = {
-  async redirects() {
-    return [
-      {
-        source: '/api/auth/apple/callback',
-        destination: '/apple-callback',
-        permanent: false,
-      },
-    ]
-  },
   /* config options here */
   images: {
     remotePatterns: [

@@ -30,27 +30,6 @@ export default function SignUpPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // This effect handles the token received from the Apple popup
-  useEffect(() => {
-    const handleAuthMessage = (event: MessageEvent) => {
-        // IMPORTANT: Check the origin of the message for security
-        if (event.origin !== window.location.origin) {
-            return;
-        }
-
-        const { type, token } = event.data;
-        if (type === 'apple-auth-success' && token) {
-            handleToken(token, 'Apple');
-        }
-    };
-
-    window.addEventListener('message', handleAuthMessage);
-
-    return () => {
-        window.removeEventListener('message', handleAuthMessage);
-    };
-  }, []);
-  
   const handleToken = (token: string, source: string) => {
     localStorage.setItem('authToken', token);
     try {
