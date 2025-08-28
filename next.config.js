@@ -6,9 +6,19 @@ const withPWA = require("@ducanh2912/next-pwa").default({
   register: true,
   skipWaiting: true,
   scope: '/',
+  reloadOnOnline: true,
 });
 
 const nextConfig = {
+  async redirects() {
+    return [
+      {
+        source: '/api/auth/apple/callback',
+        destination: '/apple-callback',
+        permanent: false,
+      },
+    ]
+  },
   /* config options here */
   images: {
     remotePatterns: [

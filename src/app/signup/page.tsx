@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,14 @@ import { User, Mail, KeyRound, Loader2 } from 'lucide-react';
 import { useToast } from '@/app/shared/hooks/use-toast';
 import { API_BASE_URL } from '@/app/shared/lib/api';
 import AppleLoginButton from '@/app/shared/components/apple-login-button';
+import { jwtDecode } from 'jwt-decode';
+
+interface DecodedToken {
+  sub: string;
+  email: string;
+  jti: string;
+}
+
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -21,6 +29,46 @@ export default function SignUpPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // This effect handles the token received from the Apple popup
+  useEffect(() => {
+    const handleAuthMessage = (event: MessageEvent) => {
+        // IMPORTANT: Check the origin of the message for security
+        if (event.origin !== window.location.origin) {
+            return;
+        }
+
+        const { type, token } = event.data;
+        if (type === 'apple-auth-success' && token) {
+            handleToken(token, 'Apple');
+        }
+    };
+
+    window.addEventListener('message', handleAuthMessage);
+
+    return () => {
+        window.removeEventListener('message', handleAuthMessage);
+    };
+  }, []);
+  
+  const handleToken = (token: string, source: string) => {
+    localStorage.setItem('authToken', token);
+    try {
+        const decodedToken = jwtDecode<DecodedToken>(token);
+        localStorage.setItem('userId', decodedToken.sub);
+        localStorage.setItem('userEmail', decodedToken.email);
+        router.replace('/dashboard');
+    } catch (error) {
+        console.error(`Failed to decode token from ${source}`, error);
+        toast({
+            variant: 'destructive',
+            title: 'Login Failed',
+            description: 'There was a problem with your login token. Please try again.',
+        });
+        localStorage.removeItem('authToken');
+        router.replace('/login');
+    }
+  }
 
   const handleGoogleSuccess = async (
     credentialResponse: CredentialResponse
@@ -37,15 +85,7 @@ export default function SignUpPage() {
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('userId', data.user.id);
-        localStorage.setItem('userEmail', data.user.email);
-
-        toast({
-          title: 'Login Successful!',
-          description: 'Welcome to ScanEats.',
-        });
-        router.push('/dashboard');
+        handleToken(data.token, 'Google');
       } else {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Google One Tap login failed.');
@@ -56,7 +96,8 @@ export default function SignUpPage() {
         title: 'Login Failed',
         description: error.message,
       });
-      setIsLoading(false);
+    } finally {
+        setIsLoading(false);
     }
   };
 
@@ -218,7 +259,7 @@ export default function SignUpPage() {
               width="320px"
             />
           </div>
-          <AppleLoginButton />
+          <AppleLoginButton onLoginSuccess={(token) => handleToken(token, 'Apple')} />
         </div>
 
         <p className="mt-8 text-center text-sm text-white/70">

@@ -39,26 +39,49 @@ function LoginForm() {
     const tokenFromUrl = searchParams.get('token');
 
     if (tokenFromUrl) {
-      localStorage.setItem('authToken', tokenFromUrl);
-      try {
-        const decodedToken = jwtDecode<DecodedToken>(tokenFromUrl);
-        localStorage.setItem('userId', decodedToken.sub);
-        localStorage.setItem('userEmail', decodedToken.email);
-        // Redirect immediately, the dashboard layout will handle auth verification
-        router.replace('/dashboard');
-      } catch (error) {
-        console.error('Failed to decode token from URL', error);
-        toast({
-          variant: 'destructive',
-          title: 'Login Failed',
-          description: 'There was a problem with your login token. Please try again.',
-        });
-        // Clear the bad token and URL
-        localStorage.removeItem('authToken');
-        router.replace('/login');
-      }
+      handleToken(tokenFromUrl, 'URL');
     }
   }, [router, searchParams, toast]);
+  
+  // This effect handles the token received from the Apple popup
+  useEffect(() => {
+    const handleAuthMessage = (event: MessageEvent) => {
+        // IMPORTANT: Check the origin of the message for security
+        if (event.origin !== window.location.origin) {
+            return;
+        }
+
+        const { type, token } = event.data;
+        if (type === 'apple-auth-success' && token) {
+            handleToken(token, 'Apple');
+        }
+    };
+
+    window.addEventListener('message', handleAuthMessage);
+
+    return () => {
+        window.removeEventListener('message', handleAuthMessage);
+    };
+  }, []);
+
+  const handleToken = (token: string, source: string) => {
+    localStorage.setItem('authToken', token);
+    try {
+        const decodedToken = jwtDecode<DecodedToken>(token);
+        localStorage.setItem('userId', decodedToken.sub);
+        localStorage.setItem('userEmail', decodedToken.email);
+        router.replace('/dashboard');
+    } catch (error) {
+        console.error(`Failed to decode token from ${source}`, error);
+        toast({
+            variant: 'destructive',
+            title: 'Login Failed',
+            description: 'There was a problem with your login token. Please try again.',
+        });
+        localStorage.removeItem('authToken');
+        router.replace('/login');
+    }
+  }
 
 
   // Check for existing token on mount
@@ -101,10 +124,8 @@ function LoginForm() {
         throw new Error('Invalid response received from server.');
       }
 
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('userId', data.user.id);
-      localStorage.setItem('userEmail', data.user.email);
-      router.push('/dashboard');
+      handleToken(data.token, 'Google');
+
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -146,11 +167,7 @@ function LoginForm() {
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('userId', data.userId);
-        localStorage.setItem('userEmail', email);
-
-        router.push('/dashboard');
+        handleToken(data.token, 'Email/Password');
       } else {
         let errorMessage = 'An unknown error occurred during login.';
         if (response.status === 401) {
@@ -275,7 +292,7 @@ function LoginForm() {
               width="320px"
             />
           </div>
-          <AppleLoginButton />
+          <AppleLoginButton onLoginSuccess={(token) => handleToken(token, 'Apple')} />
         </div>
 
         <p className="mt-8 text-center text-sm text-white/70">
