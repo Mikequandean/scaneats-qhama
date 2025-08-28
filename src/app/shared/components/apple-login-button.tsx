@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Script from 'next/script';
 import { useToast } from '@/app/shared/hooks/use-toast';
 import { API_BASE_URL } from '@/app/shared/lib/api';
@@ -26,74 +26,70 @@ export default function AppleLoginButton({ onLoginSuccess }: { onLoginSuccess: (
   }
 
   useEffect(() => {
-    if (!isScriptLoaded) return;
+    if (!isScriptLoaded || !clientId) return;
     
-    const initializeAppleID = () => {
-      try {
-        AppleID.auth.init({
-          clientId: clientId,
-          scope: 'name email',
-          redirectURI: redirectURI,
-          usePopup: true,
-        });
-        setIsInitializing(false);
-      } catch (error) {
-        console.error('Error initializing AppleID', error);
-        toast({
-            variant: 'destructive',
-            title: 'Apple Login Error',
-            description: 'Could not initialize Apple Sign-In.',
-        });
+    try {
+      AppleID.auth.init({
+        clientId: clientId,
+        scope: 'name email',
+        redirectURI: redirectURI,
+        usePopup: true,
+      });
+      setIsInitializing(false);
+    } catch (error) {
+      console.error('Error initializing AppleID', error);
+      toast({
+          variant: 'destructive',
+          title: 'Apple Login Error',
+          description: 'Could not initialize Apple Sign-In.',
+      });
+    }
+
+  }, [isScriptLoaded, clientId, redirectURI, toast]);
+
+  const handleSignIn = useCallback(async () => {
+    if (isInitializing) return;
+
+    setIsLoading(true);
+    try {
+      const data = await AppleID.auth.signIn();
+      const { code, state } = data.authorization;
+
+      const response = await fetch(`${API_BASE_URL}/api/auth/apple/callback`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          code: code,
+          state: state || '',
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to exchange Apple authorization code.');
       }
-    };
-    
-    initializeAppleID();
 
-    const handleAppleSignIn = async (event: any) => {
-      setIsLoading(true);
-      try {
-        const { code, state } = event.detail.authorization;
-        
-        // Send the authorization code to the backend
-        const response = await fetch(redirectURI, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            code: code,
-            state: state,
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to exchange Apple authorization code.');
-        }
-
-        const data = await response.json();
-        if (data.token) {
-          onLoginSuccess(data.token);
-        } else {
-          throw new Error('Backend did not return a token.');
-        }
-
-      } catch (error) {
+      const result = await response.json();
+      if (result.token) {
+        onLoginSuccess(result.token);
+      } else {
+        throw new Error('Backend did not return a token.');
+      }
+    } catch (error: any) {
+      // Don't show toast for user-cancelled sign in (error code 1001)
+      if (error && error.error !== '1001') {
         console.error('Apple Sign-In failed', error);
         toast({
           variant: 'destructive',
           title: 'Apple Login Failed',
           description: 'Could not sign in with Apple. Please try again.',
         });
-      } finally {
-        setIsLoading(false);
       }
-    };
-
-    document.addEventListener('AppleIDSignInOnSuccess', handleAppleSignIn);
-    
-    return () => {
-      document.removeEventListener('AppleIDSignInOnSuccess', handleAppleSignIn);
-    };
-
-  }, [isScriptLoaded, clientId, redirectURI, toast, onLoginSuccess]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isInitializing, onLoginSuccess, toast]);
 
   return (
     <>
@@ -117,6 +113,7 @@ export default function AppleLoginButton({ onLoginSuccess }: { onLoginSuccess: (
             data-width="320"
             data-height="40"
             style={{ display: (isInitializing || isLoading) ? 'none' : 'block' }}
+            onClick={handleSignIn}
           ></div>
       </div>
     </>
