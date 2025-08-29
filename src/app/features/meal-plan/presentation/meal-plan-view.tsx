@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/app/shared/lib/utils';
 import { API_BASE_URL } from '@/app/shared/lib/api';
 import type { View } from '@/app/features/dashboard/dashboard.types';
+import { generateSallySpeech } from '@/ai/flows/sally-tts-flow';
+import { deductCredits } from '@/ai/flows/deduct-credits-flow';
 
 const mealRepository = new MealApiRepository();
 const mealService = new MealService(mealRepository);
@@ -179,6 +181,47 @@ export const MealPlanView = ({ onNavigate }: { onNavigate: (view: View) => void 
     }
   };
 
+  const handleTextToSpeech = async (text: string) => {
+    if (!text || !profile) return;
+    
+    // Check for credits and subscription before generating audio
+    if (!profile.isSubscribed) {
+        setSubscriptionModalOpen(true);
+        return;
+    }
+    if (profile.credits <= 0) {
+        toast({
+            variant: 'destructive',
+            title: 'Out of Credits',
+            description: 'Please buy more credits to use this feature.',
+            action: (
+                <Button onClick={() => onNavigate('credits')} className="gap-2">
+                    <CircleDollarSign /> Buy Credits
+                </Button>
+            ),
+        });
+        return;
+    }
+
+    setIsAudioLoading(true);
+    try {
+      const { audioDataUri } = await generateSallySpeech({ text });
+      setAudioSrc(audioDataUri);
+
+      if (audioRef.current) {
+        audioRef.current.src = audioDataUri;
+        if (!isIos) {
+          await audioRef.current.play();
+        }
+      }
+    } catch (err) {
+      console.error('Genkit TTS Error:', err);
+      toast({ variant: 'destructive', title: 'Audio Error', description: 'Could not generate speech.' });
+    } finally {
+      setIsAudioLoading(false);
+    }
+  };
+
   const handleApiCall = async (userInput: string) => {
     if (!userInput.trim()) {
       setIsRecording(false);
@@ -208,6 +251,25 @@ export const MealPlanView = ({ onNavigate }: { onNavigate: (view: View) => void 
       return;
     }
 
+    // Subscription & Credit check before calling API
+    if (!profile.isSubscribed) {
+      setSubscriptionModalOpen(true);
+      return;
+    }
+    if (profile.credits <= 0) {
+      toast({
+          variant: 'destructive',
+          title: 'Out of Credits',
+          description: 'You have used all your credits. Please buy more to continue talking to Sally.',
+          action: (
+              <Button onClick={() => onNavigate('credits')} className="gap-2">
+                  <CircleDollarSign /> Buy Credits
+              </Button>
+          ),
+      });
+      return;
+    }
+
     setIsSallyLoading(true);
     setIsRecording(true);
     setSallyProgress(10);
@@ -219,6 +281,7 @@ export const MealPlanView = ({ onNavigate }: { onNavigate: (view: View) => void 
         clientName: profile.name,
       };
 
+      // This endpoint now only returns text
       const response = await fetch(`${API_BASE_URL}/api/sally/meal-planner`, {
         method: 'POST',
         headers: {
@@ -228,30 +291,9 @@ export const MealPlanView = ({ onNavigate }: { onNavigate: (view: View) => void 
         body: JSON.stringify(payload),
       });
 
-      if (response.status === 403) {
-        setSubscriptionModalOpen(true);
-        setSallyResponse('You need a subscription for this feature.');
-        return;
-      }
-
-      if (response.status === 429) {
-        setSallyResponse("You're out of credits! Please buy more.");
-        toast({
-          variant: 'destructive',
-          title: 'Out of Credits',
-          description:
-            'You have used all your credits. Please buy more to continue talking to Sally.',
-          action: (
-            <Button
-              onClick={() => onNavigate('credits')}
-              className="gap-2"
-            >
-              <CircleDollarSign />
-              Buy Credits
-            </Button>
-          ),
-        });
-        return;
+      if (response.status === 403 || response.status === 429) {
+          // This check is now mostly redundant but kept as a fallback.
+          throw new Error('Subscription or credit issue detected on server.');
       }
 
       if (!response.ok) {
@@ -259,36 +301,16 @@ export const MealPlanView = ({ onNavigate }: { onNavigate: (view: View) => void 
       }
 
       const responseData = await response.json();
-      const result = responseData.result;
-      const audioSpeech = responseData.audioSpeech;
+      // The backend now returns a simplified object
+      const sallyText = responseData.result.agentDialogue;
 
-      if (!result || !result.agentDialogue) {
+      if (!sallyText) {
         throw new Error("Sally didn't provide a response.");
       }
       
-      setSallyResponse(result.agentDialogue);
-
-      if (audioSpeech && audioSpeech.fileContents && audioRef.current) {
-        const audioData = `data:audio/mpeg;base64,${audioSpeech.fileContents}`;
-        setAudioSrc(audioData);
-        const audio = audioRef.current;
-        audio.src = audioData;
-
-        if (!isIos) {
-          setIsAudioLoading(true);
-          const playPromise = audio.play();
-          if (playPromise) {
-              playPromise.then(() => setIsAudioLoading(false))
-              .catch(err => {
-                  console.error("Audio playback error:", err);
-                  setIsAudioLoading(false);
-                  toast({ variant: 'destructive', title: 'Audio Error', description: 'Could not play audio.'});
-              });
-          }
-        }
-      }
+      setSallyResponse(sallyText);
+      await handleTextToSpeech(sallyText);
       
-      await fetchProfile(); // Refresh credits
     } catch (error: any) {
       let errorMessage = 'Sorry, I had a little trouble thinking. Please try again.';
       try {
@@ -315,16 +337,33 @@ export const MealPlanView = ({ onNavigate }: { onNavigate: (view: View) => void 
     }
   };
 
-  const handlePlayAudio = () => {
+  const handlePlayAudio = async () => {
     if (audioRef.current && audioSrc) {
         setIsAudioLoading(true);
-        audioRef.current.play()
-            .then(() => setIsAudioLoading(false))
-            .catch(err => {
-                console.error("Manual audio playback error:", err);
-                setIsAudioLoading(false);
-                toast({ variant: 'destructive', title: 'Audio Error', description: 'Could not play audio.'});
-            });
+        try {
+            await audioRef.current.play();
+        } catch(err) {
+            console.error("Manual audio playback error:", err);
+            setIsAudioLoading(false);
+            toast({ variant: 'destructive', title: 'Audio Error', description: 'Could not play audio.'});
+        }
+    } else if (sallyResponse) {
+        // If audio wasn't generated yet, generate it now
+        await handleTextToSpeech(sallyResponse);
+    }
+  };
+
+  const onAudioEnded = async () => {
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) return;
+
+    // Deduct 1 credit after audio plays successfully
+    const result = await deductCredits({ authToken, amount: 1 });
+    if (result.success) {
+      await fetchProfile(); // Refresh credits in UI
+      toast({ title: 'Credit Used', description: '1 credit has been deducted for using Sally.' });
+    } else {
+      toast({ variant: 'destructive', title: 'Credit Error', description: result.message });
     }
   };
 
@@ -444,7 +483,7 @@ export const MealPlanView = ({ onNavigate }: { onNavigate: (view: View) => void 
               {isAudioLoading ? (
                  <Loader2 className="h-5 w-5 animate-spin shrink-0" />
               ) : (
-                isIos && audioSrc && (
+                isIos && sallyResponse && (
                     <Button onClick={handlePlayAudio} variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-white hover:bg-white/10">
                         <PlayCircle className="h-5 w-5" />
                     </Button>
@@ -454,7 +493,7 @@ export const MealPlanView = ({ onNavigate }: { onNavigate: (view: View) => void 
           )}
         </div>
       </div>
-      <audio ref={audioRef} className="hidden" />
+      <audio ref={audioRef} className="hidden" onEnded={onAudioEnded} onPlay={() => setIsAudioLoading(false)} />
     </div>
   );
 };
