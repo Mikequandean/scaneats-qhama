@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -142,7 +143,7 @@ export default function SignUpPage() {
   return (
     <div className="relative flex min-h-screen items-center justify-center p-4">
       <AuthBackgroundImage />
-      <div className="relative z-10 mx-auto w-full max-w-md rounded-3xl bg-black/60 p-8 backdrop-blur-lg">
+      <div className="relative z-10 mx-auto w-full max-w-md rounded-3xl bg-black/70 p-8 backdrop-blur-md">
         <div className="mb-8 text-left">
           <h1 className="font-headline text-4xl font-bold leading-tight">
             Create your
@@ -152,7 +153,7 @@ export default function SignUpPage() {
         </div>
 
         <form className="space-y-6" onSubmit={handleSubmit}>
-          <div className="relative border-b border-white/40">
+          <div className="relative border-b border-white/40 py-2">
             <User className="absolute left-0 top-3 h-5 w-5 text-white/70" />
             <Input
               type="text"
@@ -164,7 +165,7 @@ export default function SignUpPage() {
             />
           </div>
 
-          <div className="relative border-b border-white/40">
+          <div className="relative border-b border-white/40 py-2">
             <Mail className="absolute left-0 top-3 h-5 w-5 text-white/70" />
             <Input
               type="email"
@@ -176,7 +177,7 @@ export default function SignUpPage() {
             />
           </div>
 
-          <div className="relative border-b border-white/40">
+          <div className="relative border-b border-white/40 py-2">
             <KeyRound className="absolute left-0 top-3 h-5 w-5 text-white/70" />
             <Input
               type="password"
@@ -192,7 +193,7 @@ export default function SignUpPage() {
             <Checkbox
               id="terms"
               required
-              className="border-primary data-[state=checked]:bg-primary"
+              className="h-5 w-5 rounded border-primary data-[state=checked]:bg-primary"
             />
             <Label htmlFor="terms" className="text-sm text-white/70">
               I agree to the{' '}
@@ -209,7 +210,7 @@ export default function SignUpPage() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-full bg-stone-900 py-6 text-base font-semibold hover:bg-stone-800"
+              className="w-full rounded-full bg-zinc-900 py-6 text-base font-semibold hover:bg-zinc-800"
             >
               {isLoading ? <Loader2 className="animate-spin" /> : 'Sign Up'}
             </Button>
@@ -221,23 +222,21 @@ export default function SignUpPage() {
             <span className="w-full border-t border-white/40" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-black/60 px-2 text-white/70">
+            <span className="bg-black/70 px-2 text-white/70">
               Or continue with
             </span>
           </div>
         </div>
 
-        <div className="flex flex-col items-center justify-center space-y-2">
-          <div className="w-full max-w-[320px]">
-            <GoogleLogin
+        <div className="flex flex-col items-center justify-center space-y-4">
+          <GoogleLogin
               onSuccess={handleGoogleSuccess}
               onError={handleGoogleError}
               theme="filled_black"
               shape="rectangular"
               size="large"
               width="320px"
-            />
-          </div>
+          />
           <AppleLoginButton onLoginSuccess={(token) => handleToken(token, 'Apple')} />
         </div>
 
@@ -254,3 +253,5 @@ export default function SignUpPage() {
     </div>
   );
 }
+
+    

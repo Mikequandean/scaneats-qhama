@@ -107,24 +107,24 @@ export default function AppleLoginButton({ onLoginSuccess }: { onLoginSuccess: (
             toast({ variant: 'destructive', title: 'Error', description: 'Failed to load Apple Sign-In script.' })
         }}
       />
-      <div style={{ width: '320px', height: '40px' }}>
+      <div style={{ width: '100%', maxWidth: '320px' }}>
         <Button 
             onClick={handleSignIn} 
             disabled={!isAppleReady || isLoading}
             variant="outline"
-            className="w-full h-full bg-white text-black border-zinc-300 hover:bg-zinc-200 flex items-center justify-center gap-2"
+            className="w-full h-[44px] bg-black text-white border-zinc-900 hover:bg-zinc-800 flex items-center justify-center gap-2 rounded-sm"
         >
           {isLoading || !isAppleReady ? <Loader2 className="h-5 w-5 animate-spin" /> : (
             <>
               <svg 
                 role="img" 
                 aria-label="Apple logo"
-                className="h-5 w-5"
+                className="h-5 w-auto"
                 viewBox="0 0 24 24" 
                 xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12.032 6.815c-1.637 0-3.23.982-4.148.982-1.033 0-2.25-1.01-3.555-1.01-1.68 0-3.195 1.01-4.148 2.536-.963 1.526-.58 4.205 1.09 5.679.846.733 1.83 1.11 2.805 1.11 1.01 0 2.06-.374 2.89-.374.82 0 1.95.405 3.12.405 1.14 0 2.22-.405 2.92-.405.7 0 1.77.374 2.76.374 1.08 0 2.12-.416 2.93-1.11.8-.702 1.22-1.71 1.25-1.75-.02-.01-3.41-1.32-3.43-4.9-.02-2.684 2.24-4.024 2.4-4.164-.97-1.428-2.5-2.35-4.13-2.35-1.95 0-3.66 1.07-4.57 1.07zM11.815.35c.21 1.26-1.28 2.32-2.4 2.35-1.12-.03-2.2-1.29-2.4-2.38C6.795.21 8.265-.9 9.385-.93c1.11-.02 2.23 1.05 2.43 2.28z"/>
+                 <path fill="white" d="M12.032 6.815c-1.637 0-3.23.982-4.148.982-1.033 0-2.25-1.01-3.555-1.01-1.68 0-3.195 1.01-4.148 2.536-.963 1.526-.58 4.205 1.09 5.679.846.733 1.83 1.11 2.805 1.11 1.01 0 2.06-.374 2.89-.374.82 0 1.95.405 3.12.405 1.14 0 2.22-.405 2.92-.405.7 0 1.77.374 2.76.374 1.08 0 2.12-.416 2.93-1.11.8-.702 1.22-1.71 1.25-1.75-.02-.01-3.41-1.32-3.43-4.9-.02-2.684 2.24-4.024 2.4-4.164-.97-1.428-2.5-2.35-4.13-2.35-1.95 0-3.66 1.07-4.57 1.07zM11.815.35c.21 1.26-1.28 2.32-2.4 2.35-1.12-.03-2.2-1.29-2.4-2.38C6.795.21 8.265-.9 9.385-.93c1.11-.02 2.23 1.05 2.43 2.28z"/>
               </svg>
-              <span className="font-semibold text-base">Continue with Apple</span>
+              <span className="font-semibold text-base">Sign in with Apple</span>
             </>
           )}
         </Button>
@@ -132,3 +132,5 @@ export default function AppleLoginButton({ onLoginSuccess }: { onLoginSuccess: (
     </>
   );
 }
+
+    

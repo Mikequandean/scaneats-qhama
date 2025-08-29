@@ -177,7 +177,7 @@ function LoginForm() {
   return (
     <div className="relative flex min-h-screen items-center justify-center p-4">
       <AuthBackgroundImage />
-      <div className="relative z-10 mx-auto w-full max-w-md rounded-3xl bg-black/60 p-8 backdrop-blur-lg">
+      <div className="relative z-10 mx-auto w-full max-w-md rounded-3xl bg-black/70 p-8 backdrop-blur-md">
         <div className="mb-8 text-left">
           <h2 className="font-headline text-4xl font-bold leading-tight">
             Log into <br />
@@ -186,7 +186,7 @@ function LoginForm() {
         </div>
 
         <form className="space-y-6" onSubmit={handleSubmit}>
-          <div className="relative border-b border-white/40">
+          <div className="relative border-b border-white/40 py-2">
             <Mail className="absolute left-0 top-3 h-5 w-5 text-white/70" />
             <Input
               type="email"
@@ -198,7 +198,7 @@ function LoginForm() {
             />
           </div>
 
-          <div className="relative border-b border-white/40">
+          <div className="relative border-b border-white/40 py-2">
             <KeyRound className="absolute left-0 top-3 h-5 w-5 text-white/70" />
             <Input
               type="password"
@@ -208,7 +208,7 @@ function LoginForm() {
               required
               className="border-0 bg-transparent pl-8 text-base placeholder:text-white/70 focus-visible:ring-0 focus-visible:ring-offset-0"
             />
-            <Link
+             <Link
               href="/forgot-password"
               className="absolute right-0 top-3 text-sm text-white/70 transition-colors hover:text-white"
             >
@@ -216,13 +216,13 @@ function LoginForm() {
             </Link>
           </div>
 
-          <div className="flex items-center justify-between">
+          <div className="flex items-center">
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="remember-me"
-                className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                className="h-5 w-5 rounded border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
               />
-              <Label htmlFor="remember-me" className="text-white/70">
+              <Label htmlFor="remember-me" className="text-sm text-white/70">
                 Remember me
               </Label>
             </div>
@@ -232,7 +232,7 @@ function LoginForm() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-full bg-stone-900 py-6 text-base font-semibold hover:bg-stone-800"
+              className="w-full rounded-full bg-zinc-900 py-6 text-base font-semibold hover:bg-zinc-800"
             >
               {isLoading ? <Loader2 className="animate-spin" /> : 'Log In'}
             </Button>
@@ -244,34 +244,38 @@ function LoginForm() {
             <span className="w-full border-t border-white/40" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-black/60 px-2 text-white/70">
+            <span className="bg-black/70 px-2 text-white/70">
               Or log in with
             </span>
           </div>
         </div>
 
-        <div className="flex flex-col items-center justify-center space-y-2">
-          <div className="w-full max-w-[320px]">
-            <GoogleLogin
-              onSuccess={(credentialResponse: CredentialResponse) => {
-                if (credentialResponse.credential) {
-                  handleExternalAuth(credentialResponse.credential);
-                }
-              }}
-              onError={() => {
-                toast({
-                  variant: 'destructive',
-                  title: 'Login Failed',
-                  description:
-                    'Google authentication failed. Please try again.',
-                });
-              }}
+        <div className="flex flex-col items-center justify-center space-y-4">
+           <div id="g_id_onload"
+             data-client_id={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
+             data-login_uri="/api/auth/google"
+             data-auto_prompt="false">
+          </div>
+          <div 
+              className="g_id_signin"
+              data-type="standard"
+              data-shape="rectangular"
+              data-theme="filled_black"
+              data-text="signin_with"
+              data-size="large"
+              data-logo_alignment="left"
+              style={{ width: '100%', maxWidth: '320px', borderRadius: '9999px' }}
+          ></div>
+          <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
               theme="filled_black"
               shape="rectangular"
               size="large"
               width="320px"
-            />
-          </div>
+              useOneTap={true}
+          />
+
           <AppleLoginButton onLoginSuccess={(token) => handleToken(token, 'Apple')} />
         </div>
 
@@ -296,3 +300,5 @@ export default function LoginPage() {
     </Suspense>
   );
 }
+
+    
