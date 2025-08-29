@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow to deduct credits from a user's account via the API.
@@ -17,7 +18,7 @@ export const DeductCreditsOutputSchema = z.object({
   success: z.boolean(),
   message: z.string(),
 });
-export type DeductCreditsOutput = z.infer<typeof DeduDeductCreditsOutputSchema>;
+export type DeductCreditsOutput = z.infer<typeof DeductCreditsOutputSchema>;
 
 export async function deductCredits(input: DeductCreditsInput): Promise<DeductCreditsOutput> {
   const { authToken, amount } = input;

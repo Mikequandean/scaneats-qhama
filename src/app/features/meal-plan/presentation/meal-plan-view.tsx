@@ -14,8 +14,6 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/app/shared/lib/utils';
 import { API_BASE_URL } from '@/app/shared/lib/api';
 import type { View } from '@/app/features/dashboard/dashboard.types';
-import { generateSallySpeech } from '@/ai/flows/sally-tts-flow';
-import { deductCredits } from '@/ai/flows/deduct-credits-flow';
 
 const mealRepository = new MealApiRepository();
 const mealService = new MealService(mealRepository);
@@ -181,47 +179,6 @@ export const MealPlanView = ({ onNavigate }: { onNavigate: (view: View) => void 
     }
   };
 
-  const handleTextToSpeech = async (text: string) => {
-    if (!text || !profile) return;
-    
-    // Check for credits and subscription before generating audio
-    if (!profile.isSubscribed) {
-        setSubscriptionModalOpen(true);
-        return;
-    }
-    if (profile.credits <= 0) {
-        toast({
-            variant: 'destructive',
-            title: 'Out of Credits',
-            description: 'Please buy more credits to use this feature.',
-            action: (
-                <Button onClick={() => onNavigate('credits')} className="gap-2">
-                    <CircleDollarSign /> Buy Credits
-                </Button>
-            ),
-        });
-        return;
-    }
-
-    setIsAudioLoading(true);
-    try {
-      const { audioDataUri } = await generateSallySpeech({ text });
-      setAudioSrc(audioDataUri);
-
-      if (audioRef.current) {
-        audioRef.current.src = audioDataUri;
-        if (!isIos) {
-          await audioRef.current.play();
-        }
-      }
-    } catch (err) {
-      console.error('Genkit TTS Error:', err);
-      toast({ variant: 'destructive', title: 'Audio Error', description: 'Could not generate speech.' });
-    } finally {
-      setIsAudioLoading(false);
-    }
-  };
-
   const handleApiCall = async (userInput: string) => {
     if (!userInput.trim()) {
       setIsRecording(false);
@@ -251,7 +208,7 @@ export const MealPlanView = ({ onNavigate }: { onNavigate: (view: View) => void 
       return;
     }
 
-    // Subscription & Credit check before calling API
+    // Subscription & Credit check is handled by the backend API
     if (!profile.isSubscribed) {
       setSubscriptionModalOpen(true);
       return;
@@ -281,7 +238,6 @@ export const MealPlanView = ({ onNavigate }: { onNavigate: (view: View) => void 
         clientName: profile.name,
       };
 
-      // This endpoint now only returns text
       const response = await fetch(`${API_BASE_URL}/api/sally/meal-planner`, {
         method: 'POST',
         headers: {
@@ -291,9 +247,22 @@ export const MealPlanView = ({ onNavigate }: { onNavigate: (view: View) => void 
         body: JSON.stringify(payload),
       });
 
-      if (response.status === 403 || response.status === 429) {
-          // This check is now mostly redundant but kept as a fallback.
-          throw new Error('Subscription or credit issue detected on server.');
+      if (response.status === 403) {
+          setSubscriptionModalOpen(true);
+          throw new Error('Subscription required.');
+      }
+      if (response.status === 429) {
+          toast({
+              variant: 'destructive',
+              title: 'Out of Credits',
+              description: 'Please buy more credits to use this feature.',
+              action: (
+                  <Button onClick={() => onNavigate('credits')} className="gap-2">
+                      <CircleDollarSign /> Buy Credits
+                  </Button>
+              ),
+          });
+          throw new Error('Out of credits.');
       }
 
       if (!response.ok) {
@@ -301,33 +270,44 @@ export const MealPlanView = ({ onNavigate }: { onNavigate: (view: View) => void 
       }
 
       const responseData = await response.json();
-      // The backend now returns a simplified object
       const sallyText = responseData.result.agentDialogue;
+      const audioData = responseData.audioSpeech;
 
       if (!sallyText) {
         throw new Error("Sally didn't provide a response.");
       }
       
       setSallyResponse(sallyText);
-      await handleTextToSpeech(sallyText);
-      
-    } catch (error: any) {
-      let errorMessage = 'Sorry, I had a little trouble thinking. Please try again.';
-      try {
-        const errorData = await error.json();
-        errorMessage = errorData.message || errorData.title || errorMessage;
-      } catch (jsonError) {
-        if (error instanceof Error) {
-            errorMessage = error.message;
+      await fetchProfile(); // Refresh profile to get updated credit count
+
+      if (audioData && audioData.fileContents && audioData.contentType) {
+        const audioDataUri = `data:${audioData.contentType};base64,${audioData.fileContents}`;
+        setAudioSrc(audioDataUri);
+        if (audioRef.current) {
+          audioRef.current.src = audioDataUri;
+           if (!isIos) {
+            setIsAudioLoading(true);
+            await audioRef.current.play();
+          }
         }
+      } else {
+         toast({ variant: 'destructive', title: 'Audio Error', description: 'Could not retrieve speech from server.' });
       }
       
-      setSallyResponse(errorMessage);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: errorMessage,
-      });
+    } catch (error: any) {
+       let errorMessage = 'Sorry, I had a little trouble thinking. Please try again.';
+       if (error.message !== 'Subscription required.' && error.message !== 'Out of credits.') {
+          try {
+            const errorData = await error.json();
+            errorMessage = errorData.message || errorData.title || errorMessage;
+          } catch (jsonError) {
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+          }
+          setSallyResponse(errorMessage);
+          toast({ variant: 'destructive', title: 'Error', description: errorMessage });
+       }
     } finally {
       setSallyProgress(100);
       setTimeout(() => {
@@ -347,23 +327,6 @@ export const MealPlanView = ({ onNavigate }: { onNavigate: (view: View) => void 
             setIsAudioLoading(false);
             toast({ variant: 'destructive', title: 'Audio Error', description: 'Could not play audio.'});
         }
-    } else if (sallyResponse) {
-        // If audio wasn't generated yet, generate it now
-        await handleTextToSpeech(sallyResponse);
-    }
-  };
-
-  const onAudioEnded = async () => {
-    const authToken = localStorage.getItem('authToken');
-    if (!authToken) return;
-
-    // Deduct 1 credit after audio plays successfully
-    const result = await deductCredits({ authToken, amount: 1 });
-    if (result.success) {
-      await fetchProfile(); // Refresh credits in UI
-      toast({ title: 'Credit Used', description: '1 credit has been deducted for using Sally.' });
-    } else {
-      toast({ variant: 'destructive', title: 'Credit Error', description: result.message });
     }
   };
 
@@ -483,7 +446,7 @@ export const MealPlanView = ({ onNavigate }: { onNavigate: (view: View) => void 
               {isAudioLoading ? (
                  <Loader2 className="h-5 w-5 animate-spin shrink-0" />
               ) : (
-                isIos && sallyResponse && (
+                isIos && audioSrc && (
                     <Button onClick={handlePlayAudio} variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-white hover:bg-white/10">
                         <PlayCircle className="h-5 w-5" />
                     </Button>
@@ -493,7 +456,7 @@ export const MealPlanView = ({ onNavigate }: { onNavigate: (view: View) => void 
           )}
         </div>
       </div>
-      <audio ref={audioRef} className="hidden" onEnded={onAudioEnded} onPlay={() => setIsAudioLoading(false)} />
+       <audio ref={audioRef} className="hidden" onPlay={() => setIsAudioLoading(false)} onEnded={() => setIsAudioLoading(false)} />
     </div>
   );
 };

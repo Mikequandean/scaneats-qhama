@@ -12,8 +12,6 @@ import { useUserData } from '@/app/shared/context/user-data-context';
 import { cn } from '@/app/shared/lib/utils';
 import { API_BASE_URL } from '@/app/shared/lib/api';
 import type { View } from '@/app/features/dashboard/dashboard.types';
-import { generateSallySpeech } from '@/ai/flows/sally-tts-flow';
-import { deductCredits } from '@/ai/flows/deduct-credits-flow';
 
 
 declare global {
@@ -145,47 +143,6 @@ export const SallyView = ({ onNavigate }: { onNavigate: (view: View) => void }) 
     }
   };
   
-  const handleTextToSpeech = async (text: string) => {
-    if (!text || !profile) return;
-    
-    // Check for credits and subscription before generating audio
-    if (!profile.isSubscribed) {
-        setSubscriptionModalOpen(true);
-        return;
-    }
-    if (profile.credits <= 0) {
-        toast({
-            variant: 'destructive',
-            title: 'Out of Credits',
-            description: 'Please buy more credits to use this feature.',
-            action: (
-                <Button onClick={() => onNavigate('credits')} className="gap-2">
-                    <CircleDollarSign /> Buy Credits
-                </Button>
-            ),
-        });
-        return;
-    }
-
-    setIsAudioLoading(true);
-    try {
-      const { audioDataUri } = await generateSallySpeech({ text });
-      setAudioSrc(audioDataUri);
-
-      if (audioRef.current) {
-        audioRef.current.src = audioDataUri;
-        if (!isIos) {
-          await audioRef.current.play();
-        }
-      }
-    } catch (err) {
-      console.error('Genkit TTS Error:', err);
-      toast({ variant: 'destructive', title: 'Audio Error', description: 'Could not generate speech.' });
-    } finally {
-      setIsAudioLoading(false);
-    }
-  };
-
   const handleApiCall = async (userInput: string) => {
     if (!userInput.trim()) {
       setIsRecording(false);
@@ -213,7 +170,8 @@ export const SallyView = ({ onNavigate }: { onNavigate: (view: View) => void }) 
       return;
     }
 
-    // Subscription & Credit check before calling API
+    // Subscription & Credit check is now handled by the backend API
+    // We will still check here to provide immediate feedback if possible
     if (!profile.isSubscribed) {
       setSubscriptionModalOpen(true);
       return;
@@ -243,7 +201,6 @@ export const SallyView = ({ onNavigate }: { onNavigate: (view: View) => void }) 
         clientName: profile.name,
       };
       
-      // This endpoint now only returns text
       const response = await fetch(`${API_BASE_URL}/api/sally/body-assessment`, {
         method: 'POST',
         headers: {
@@ -253,9 +210,22 @@ export const SallyView = ({ onNavigate }: { onNavigate: (view: View) => void }) 
         body: JSON.stringify(payload),
       });
       
-      if (response.status === 403 || response.status === 429) {
-          // This check is now mostly redundant but kept as a fallback.
-          throw new Error('Subscription or credit issue detected on server.');
+      if (response.status === 403) {
+          setSubscriptionModalOpen(true);
+          throw new Error('Subscription required.');
+      }
+      if (response.status === 429) {
+          toast({
+              variant: 'destructive',
+              title: 'Out of Credits',
+              description: 'Please buy more credits to use this feature.',
+              action: (
+                  <Button onClick={() => onNavigate('credits')} className="gap-2">
+                      <CircleDollarSign /> Buy Credits
+                  </Button>
+              ),
+          });
+          throw new Error('Out of credits.');
       }
 
       if (!response.ok) {
@@ -263,33 +233,44 @@ export const SallyView = ({ onNavigate }: { onNavigate: (view: View) => void }) 
       }
 
       const responseData = await response.json();
-      // The backend now returns a simplified object
       const sallyText = responseData.result.agentDialogue;
-      
+      const audioData = responseData.audioSpeech; // This is a FileContentResult
+
       if (!sallyText) {
         throw new Error("Sally didn't provide a response.");
       }
-
+      
       setSallyResponse(sallyText);
-      await handleTextToSpeech(sallyText);
+      await fetchProfile(); // Refresh profile to get updated credit count
+
+      if (audioData && audioData.fileContents && audioData.contentType) {
+        const audioDataUri = `data:${audioData.contentType};base64,${audioData.fileContents}`;
+        setAudioSrc(audioDataUri);
+        if (audioRef.current) {
+          audioRef.current.src = audioDataUri;
+           if (!isIos) {
+            setIsAudioLoading(true);
+            await audioRef.current.play();
+          }
+        }
+      } else {
+         toast({ variant: 'destructive', title: 'Audio Error', description: 'Could not retrieve speech from server.' });
+      }
 
     } catch (error: any) {
       let errorMessage = 'Sorry, I had a little trouble thinking. Please try again.';
-      try {
-        const errorData = await error.json();
-        errorMessage = errorData.message || errorData.title || errorMessage;
-      } catch (jsonError) {
-        if (error instanceof Error) {
-            errorMessage = error.message;
-        }
-      }
-      
-      setSallyResponse(errorMessage);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: errorMessage,
-      });
+       if (error.message !== 'Subscription required.' && error.message !== 'Out of credits.') {
+          try {
+            const errorData = await error.json();
+            errorMessage = errorData.message || errorData.title || errorMessage;
+          } catch (jsonError) {
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+          }
+          setSallyResponse(errorMessage);
+          toast({ variant: 'destructive', title: 'Error', description: errorMessage });
+       }
     } finally {
       setLoadingProgress(100);
       setTimeout(() => {
@@ -309,26 +290,9 @@ export const SallyView = ({ onNavigate }: { onNavigate: (view: View) => void }) 
             setIsAudioLoading(false);
             toast({ variant: 'destructive', title: 'Audio Error', description: 'Could not play audio.'});
         }
-    } else if (sallyResponse) {
-        // If audio wasn't generated yet, generate it now
-        await handleTextToSpeech(sallyResponse);
     }
   };
-
-  const onAudioEnded = async () => {
-    const authToken = localStorage.getItem('authToken');
-    if (!authToken) return;
-
-    // Deduct 1 credit after audio plays successfully
-    const result = await deductCredits({ authToken, amount: 1 });
-    if (result.success) {
-      await fetchProfile(); // Refresh credits in UI
-      toast({ title: 'Credit Used', description: '1 credit has been deducted for using Sally.' });
-    } else {
-      toast({ variant: 'destructive', title: 'Credit Error', description: result.message });
-    }
-  };
-
+  
   return (
     <div className="flex min-h-screen w-full items-center justify-center overflow-hidden bg-gradient-to-br from-purple-50 via-indigo-100 to-blue-50 p-4">
       <div className="flex w-full max-w-sm flex-col items-center gap-6 rounded-3xl border border-white/40 bg-white/70 p-6 shadow-[0_20px_55px_8px_rgba(110,100,150,0.45)] backdrop-blur-2xl backdrop-saturate-150">
@@ -389,20 +353,20 @@ export const SallyView = ({ onNavigate }: { onNavigate: (view: View) => void }) 
                 <strong>Sally</strong>
                 <span className="text-gray-600"> - {sallyResponse}</span>
               </div>
-              {isAudioLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin shrink-0" />
+               {isAudioLoading ? (
+                 <Loader2 className="h-5 w-5 animate-spin shrink-0" />
               ) : (
-                 isIos && sallyResponse && (
+                isIos && audioSrc && (
                     <Button onClick={handlePlayAudio} variant="ghost" size="icon" className="h-7 w-7 shrink-0">
                         <PlayCircle className="h-5 w-5" />
                     </Button>
-                 )
+                )
               )}
             </div>
           )}
         </div>
       </div>
-      <audio ref={audioRef} className="hidden" onEnded={onAudioEnded} onPlay={() => setIsAudioLoading(false)} />
+       <audio ref={audioRef} className="hidden" onPlay={() => setIsAudioLoading(false)} onEnded={() => setIsAudioLoading(false)} />
     </div>
   );
 };
