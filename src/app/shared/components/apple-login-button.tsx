@@ -82,7 +82,7 @@ export default function AppleLoginButton({ onLoginSuccess }: { onLoginSuccess: (
     } finally {
       setIsLoading(false);
     }
-  }, [isAppleReady, isLoading, onLoginSuccess, toast]);
+  }, [isAppleReady, isLoading, onLoginSuccess, toast, API_BASE_URL]);
 
   if (!clientId) {
     return <p className="text-destructive text-center text-xs">Apple Login is not configured correctly.</p>;
