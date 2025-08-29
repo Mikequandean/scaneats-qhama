@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Mic, CircleDollarSign } from 'lucide-react';
+import { Loader2, Mic, CircleDollarSign, PlayCircle } from 'lucide-react';
 
 import { useToast } from '@/app/shared/hooks/use-toast';
 import { useUserData } from '@/app/shared/context/user-data-context';
@@ -30,9 +30,15 @@ export const SallyView = ({ onNavigate }: { onNavigate: (view: View) => void }) 
   const [loadingProgress, setLoadingProgress] = useState(0);
   const recognitionRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const [audioSrc, setAudioSrc] = useState<string | null>(null);
+  const [isIos, setIsIos] = useState(false);
   const { toast } = useToast();
   const { profile, setSubscriptionModalOpen, fetchProfile } = useUserData();
 
+  useEffect(() => {
+    setIsIos(/iPad|iPhone|iPod/.test(navigator.userAgent));
+  }, []);
+  
   useEffect(() => {
     if (isLoading) {
       const interval = setInterval(() => {
@@ -117,6 +123,7 @@ export const SallyView = ({ onNavigate }: { onNavigate: (view: View) => void }) 
     if (isLoading || !recognitionRef.current) return;
 
     setSallyResponse('');
+    setAudioSrc(null);
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -223,19 +230,22 @@ export const SallyView = ({ onNavigate }: { onNavigate: (view: View) => void }) 
       setSallyResponse(result.agentDialogue);
       
       if (audioSpeech && audioSpeech.fileContents && audioRef.current) {
-        setIsAudioLoading(true);
-        const audioSrc = `data:audio/mpeg;base64,${audioSpeech.fileContents}`;
+        const audioData = `data:audio/mpeg;base64,${audioSpeech.fileContents}`;
+        setAudioSrc(audioData);
         const audio = audioRef.current;
-        audio.src = audioSrc;
+        audio.src = audioData;
 
-        const playPromise = audio.play();
-        if (playPromise) {
-            playPromise.then(() => setIsAudioLoading(false))
-            .catch(err => {
-                console.error("Audio playback error:", err);
-                setIsAudioLoading(false);
-                toast({ variant: 'destructive', title: 'Audio Error', description: 'Could not play audio.'});
-            });
+        if (!isIos) {
+          setIsAudioLoading(true);
+          const playPromise = audio.play();
+          if (playPromise) {
+              playPromise.then(() => setIsAudioLoading(false))
+              .catch(err => {
+                  console.error("Audio playback error:", err);
+                  setIsAudioLoading(false);
+                  toast({ variant: 'destructive', title: 'Audio Error', description: 'Could not play audio.'});
+              });
+          }
         }
       }
       
@@ -263,6 +273,19 @@ export const SallyView = ({ onNavigate }: { onNavigate: (view: View) => void }) 
         setIsLoading(false);
         setIsRecording(false);
       }, 500);
+    }
+  };
+
+  const handlePlayAudio = () => {
+    if (audioRef.current && audioSrc) {
+        setIsAudioLoading(true);
+        audioRef.current.play()
+            .then(() => setIsAudioLoading(false))
+            .catch(err => {
+                console.error("Manual audio playback error:", err);
+                setIsAudioLoading(false);
+                toast({ variant: 'destructive', title: 'Audio Error', description: 'Could not play audio.'});
+            });
     }
   };
 
@@ -326,8 +349,14 @@ export const SallyView = ({ onNavigate }: { onNavigate: (view: View) => void }) 
                 <strong>Sally</strong>
                 <span className="text-gray-600"> - {sallyResponse}</span>
               </div>
-              {isAudioLoading && (
+              {isAudioLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin shrink-0" />
+              ) : (
+                 isIos && audioSrc && (
+                    <Button onClick={handlePlayAudio} variant="ghost" size="icon" className="h-7 w-7 shrink-0">
+                        <PlayCircle className="h-5 w-5" />
+                    </Button>
+                 )
               )}
             </div>
           )}

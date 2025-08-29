@@ -3,7 +3,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useToast } from '@/app/shared/hooks/use-toast';
-import { Loader2, Info, Mic, CircleDollarSign } from 'lucide-react';
+import { Loader2, Info, Mic, CircleDollarSign, PlayCircle } from 'lucide-react';
 import { MealApiRepository } from '../data/meal-api.repository';
 import { MealService } from '../application/meal.service';
 import type { ScannedFood } from '@/app/domain/scanned-food';
@@ -30,6 +30,12 @@ export const MealPlanView = ({ onNavigate }: { onNavigate: (view: View) => void 
   const recognitionRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [sallyProgress, setSallyProgress] = useState(0);
+  const [audioSrc, setAudioSrc] = useState<string | null>(null);
+  const [isIos, setIsIos] = useState(false);
+
+  useEffect(() => {
+    setIsIos(/iPad|iPhone|iPod/.test(navigator.userAgent));
+  }, []);
 
   const fetchMealPlan = useCallback(async () => {
     setIsMealLoading(true);
@@ -153,6 +159,7 @@ export const MealPlanView = ({ onNavigate }: { onNavigate: (view: View) => void 
 
     if (isSallyLoading || !recognitionRef.current) return;
     setSallyResponse(null);
+    setAudioSrc(null);
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -262,19 +269,22 @@ export const MealPlanView = ({ onNavigate }: { onNavigate: (view: View) => void 
       setSallyResponse(result.agentDialogue);
 
       if (audioSpeech && audioSpeech.fileContents && audioRef.current) {
-        setIsAudioLoading(true);
-        const audioSrc = `data:audio/mpeg;base64,${audioSpeech.fileContents}`;
+        const audioData = `data:audio/mpeg;base64,${audioSpeech.fileContents}`;
+        setAudioSrc(audioData);
         const audio = audioRef.current;
-        audio.src = audioSrc;
+        audio.src = audioData;
 
-        const playPromise = audio.play();
-        if (playPromise) {
-            playPromise.then(() => setIsAudioLoading(false))
-            .catch(err => {
-                console.error("Audio playback error:", err);
-                setIsAudioLoading(false);
-                toast({ variant: 'destructive', title: 'Audio Error', description: 'Could not play audio.'});
-            });
+        if (!isIos) {
+          setIsAudioLoading(true);
+          const playPromise = audio.play();
+          if (playPromise) {
+              playPromise.then(() => setIsAudioLoading(false))
+              .catch(err => {
+                  console.error("Audio playback error:", err);
+                  setIsAudioLoading(false);
+                  toast({ variant: 'destructive', title: 'Audio Error', description: 'Could not play audio.'});
+              });
+          }
         }
       }
       
@@ -302,6 +312,19 @@ export const MealPlanView = ({ onNavigate }: { onNavigate: (view: View) => void 
         setIsSallyLoading(false);
         setIsRecording(false);
       }, 500);
+    }
+  };
+
+  const handlePlayAudio = () => {
+    if (audioRef.current && audioSrc) {
+        setIsAudioLoading(true);
+        audioRef.current.play()
+            .then(() => setIsAudioLoading(false))
+            .catch(err => {
+                console.error("Manual audio playback error:", err);
+                setIsAudioLoading(false);
+                toast({ variant: 'destructive', title: 'Audio Error', description: 'Could not play audio.'});
+            });
     }
   };
 
@@ -418,8 +441,14 @@ export const MealPlanView = ({ onNavigate }: { onNavigate: (view: View) => void 
                 {sallyResponse ||
                   "Ask me about this meal and I'll tell you everything"}
               </span>
-              {isAudioLoading && (
+              {isAudioLoading ? (
                  <Loader2 className="h-5 w-5 animate-spin shrink-0" />
+              ) : (
+                isIos && audioSrc && (
+                    <Button onClick={handlePlayAudio} variant="ghost" size="icon" className="h-7 w-7 shrink-0 text-white hover:bg-white/10">
+                        <PlayCircle className="h-5 w-5" />
+                    </Button>
+                )
               )}
             </div>
           )}
