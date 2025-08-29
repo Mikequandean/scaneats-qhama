@@ -139,8 +139,7 @@ export default function SignUpPage() {
   };
 
   const handleAppleSignIn = () => {
-    // Redirect to your backend endpoint that initiates the Apple OAuth flow
-    window.location.href = `${API_BASE_URL}/api/auth/apple/signin`;
+    window.location.href = `${API_BASE_URL}/api/appleauth/start`;
   };
 
   return (
@@ -246,15 +245,15 @@ export default function SignUpPage() {
             className="w-full max-w-[320px] h-[44px] bg-black text-white border-zinc-900 hover:bg-zinc-800 flex items-center justify-center gap-2 rounded-sm"
           >
             <svg
-              role="img"
-              width="20"
-              height="20"
-              aria-label="Apple logo"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M12.032 6.815c-1.637 0-3.23.982-4.148.982-1.033 0-2.25-1.01-3.555-1.01-1.68 0-3.195 1.01-4.148 2.536-.963 1.526-.58 4.205 1.09 5.679.846.733 1.83 1.11 2.805 1.11 1.01 0 2.06-.374 2.89-.374.82 0 1.95.405 3.12.405 1.14 0 2.22-.405 2.92-.405.7 0 1.77.374 2.76.374 1.08 0 2.12-.416 2.93-1.11.8-.702 1.22-1.71 1.25-1.75-.02-.01-3.41-1.32-3.43-4.9-.02-2.684 2.24-4.024 2.4-4.164-.97-1.428-2.5-2.35-4.13-2.35-1.95 0-3.66 1.07-4.57 1.07zM11.815.35c.21 1.26-1.28 2.32-2.4 2.35-1.12-.03-2.2-1.29-2.4-2.38C6.795.21 8.265-.9 9.385-.93c1.11-.02 2.23 1.05 2.43 2.28z"/>
+                role="img"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="h-5 w-5"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+              <path d="M12.01,16.22c-1.39,0-2.34-0.81-3.69-0.81c-1.33,0-2.61,0.81-3.51,2.04c-1.13,1.53-2.19,4.2-0.5,6.58 c0.81,1.14,1.86,2.04,3.2,2.04c1.24,0,1.86-0.74,3.48-0.74c1.62,0,2.14,0.74,3.5,0.74c1.33,0,2.29-0.9,3.1-2.04 c1.68-2.38,0.59-5.12-0.69-6.58c-1.02-1.22-2.31-2.04-3.65-2.04C14.04,16.22,13.31,16.22,12.01,16.22z M15.1,10.6 c-0.03-2.04,1.53-3.62,3.45-3.62c0.3,0,1.74,0.22,2.61,1.53c-1.31,0.81-2.29,2.19-2.92,3.48c-0.61,1.25-1.23,2.7-2.19,2.7 c-0.05,0-0.95-0.12-1.6-1.5C14.02,12.59,15.13,11.23,15.1,10.6z"/>
             </svg>
             <span className="font-semibold text-base">Sign in with Apple</span>
           </Button>
