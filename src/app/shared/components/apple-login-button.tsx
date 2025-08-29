@@ -102,7 +102,7 @@ export default function AppleLoginButton({ onLoginSuccess }: { onLoginSuccess: (
             onClick={handleSignIn} 
             disabled={!isAppleReady || isLoading}
             variant="outline"
-            className="w-full h-full bg-black text-white border-white/40 hover:bg-zinc-800 hover:text-white flex items-center justify-center gap-2"
+            className="w-full h-full bg-white text-black border-zinc-300 hover:bg-zinc-200 flex items-center justify-center gap-2"
         >
           {isLoading || !isAppleReady ? <Loader2 className="h-5 w-5 animate-spin" /> : (
             <>
