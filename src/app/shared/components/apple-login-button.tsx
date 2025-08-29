@@ -112,18 +112,16 @@ export default function AppleLoginButton({ onLoginSuccess }: { onLoginSuccess: (
             onClick={handleSignIn} 
             disabled={!isAppleReady || isLoading}
             variant="outline"
-            className="w-full h-full bg-black text-white border-zinc-700 hover:bg-zinc-800 flex items-center justify-center gap-2"
+            className="w-full h-full bg-white text-black border-zinc-300 hover:bg-zinc-200 flex items-center justify-center gap-2"
         >
           {isLoading || !isAppleReady ? <Loader2 className="h-5 w-5 animate-spin" /> : (
             <>
               <svg
                 role="img"
                 aria-label="Apple logo"
-                width="24" 
-                height="24"
                 viewBox="0 0 24 24"
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-7 w-7 fill-current"
+                className="h-8 w-8 fill-current"
               >
                 <path d="M12.152 6.896c-1.626 0-3.213 1.077-4.145 1.077-1.028 0-2.254-1.043-3.56-1.043-1.68 0-3.195 1.08-4.143 2.668-.962 1.583-.58 4.343 1.09 5.864.845.74 1.83 1.14 2.803 1.14 1.01 0 2.06-.38 2.89-.38.82 0 1.95.42 3.12.42 1.14 0 2.22-.38 2.92-.38.7 0 1.77.38 2.76.38 1.08 0 2.12-.42 2.93-1.12.8-.7 1.22-1.74 1.25-1.78-.02-.01-3.41-1.34-3.43-5.04-.02-2.73 2.24-4.11 2.4-4.25-.97-1.46-2.5-2.4-4.13-2.4-1.95 0-3.66 1.1-4.57 1.1zM11.85.27c.21 1.29-1.28 2.37-2.4 2.4-1.12-.03-2.2-1.32-2.4-2.43-.22-1.11 1.25-2.22 2.37-2.25 1.11-.02 2.23 1.08 2.43 2.28z" />
               </svg>
