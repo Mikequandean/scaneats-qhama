@@ -117,15 +117,24 @@ function LoginForm() {
     }
   };
 
+  const handleGoogleSuccess = (credentialResponse: CredentialResponse) => {
+    if (credentialResponse.credential) {
+      handleExternalAuth(credentialResponse.credential);
+    }
+  };
+
+  const handleGoogleError = () => {
+    console.log('One Tap login error');
+    toast({
+      variant: 'destructive',
+      title: 'Login Failed',
+      description: 'Google authentication failed. Please try again.',
+    });
+  };
+
   useGoogleOneTapLogin({
-    onSuccess: (credentialResponse) => {
-      if (credentialResponse.credential) {
-        handleExternalAuth(credentialResponse.credential);
-      }
-    },
-    onError: () => {
-      console.log('One Tap login error');
-    },
+    onSuccess: handleGoogleSuccess,
+    onError: handleGoogleError,
     disabled: !!(searchParams && searchParams.get('token'))
   });
 
@@ -251,21 +260,6 @@ function LoginForm() {
         </div>
 
         <div className="flex flex-col items-center justify-center space-y-4">
-           <div id="g_id_onload"
-             data-client_id={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}
-             data-login_uri="/api/auth/google"
-             data-auto_prompt="false">
-          </div>
-          <div 
-              className="g_id_signin"
-              data-type="standard"
-              data-shape="rectangular"
-              data-theme="filled_black"
-              data-text="signin_with"
-              data-size="large"
-              data-logo_alignment="left"
-              style={{ width: '100%', maxWidth: '320px', borderRadius: '9999px' }}
-          ></div>
           <GoogleLogin
               onSuccess={handleGoogleSuccess}
               onError={handleGoogleError}
@@ -300,5 +294,3 @@ export default function LoginPage() {
     </Suspense>
   );
 }
-
-    
