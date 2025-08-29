@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -10,10 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AuthBackgroundImage } from '@/app/shared/components/auth-background-image';
-import { KeyRound, Mail, Loader2 } from 'lucide-react';
+import { KeyRound, Mail, Loader2, Apple } from 'lucide-react';
 import { useToast } from '@/app/shared/hooks/use-toast';
 import { API_BASE_URL } from '@/app/shared/lib/api';
-import AppleLoginButton from '@/app/shared/components/apple-login-button';
 import { jwtDecode } from 'jwt-decode';
 
 interface DecodedToken {
@@ -21,7 +19,6 @@ interface DecodedToken {
   email: string;
   jti: string;
 }
-
 
 function LoginForm() {
   const router = useRouter();
@@ -33,36 +30,32 @@ function LoginForm() {
 
   // This effect handles the token from the URL after external auth (Google, Apple)
   useEffect(() => {
-    if (!searchParams) {
-      return;
-    }
-    const tokenFromUrl = searchParams.get('token');
+    if (!searchParams) return;
 
+    const tokenFromUrl = searchParams.get('token');
     if (tokenFromUrl) {
       handleToken(tokenFromUrl, 'URL');
     }
   }, [router, searchParams, toast]);
-  
 
   const handleToken = (token: string, source: string) => {
     localStorage.setItem('authToken', token);
     try {
-        const decodedToken = jwtDecode<DecodedToken>(token);
-        localStorage.setItem('userId', decodedToken.sub);
-        localStorage.setItem('userEmail', decodedToken.email);
-        router.replace('/dashboard');
+      const decodedToken = jwtDecode<DecodedToken>(token);
+      localStorage.setItem('userId', decodedToken.sub);
+      localStorage.setItem('userEmail', decodedToken.email);
+      router.replace('/dashboard');
     } catch (error) {
-        console.error(`Failed to decode token from ${source}`, error);
-        toast({
-            variant: 'destructive',
-            title: 'Login Failed',
-            description: 'There was a problem with your login token. Please try again.',
-        });
-        localStorage.removeItem('authToken');
-        router.replace('/login');
+      console.error(`Failed to decode token from ${source}`, error);
+      toast({
+        variant: 'destructive',
+        title: 'Login Failed',
+        description: 'There was a problem with your login token. Please try again.',
+      });
+      localStorage.removeItem('authToken');
+      router.replace('/login');
     }
-  }
-
+  };
 
   // Check for existing token on mount
   useEffect(() => {
@@ -105,7 +98,6 @@ function LoginForm() {
       }
 
       handleToken(data.token, 'Google');
-
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -135,7 +127,7 @@ function LoginForm() {
   useGoogleOneTapLogin({
     onSuccess: handleGoogleSuccess,
     onError: handleGoogleError,
-    disabled: !!(searchParams && searchParams.get('token'))
+    disabled: !!(searchParams && searchParams.get('token')),
   });
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -145,9 +137,7 @@ function LoginForm() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/Auth/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           Email: email,
           Password: password,
@@ -217,7 +207,7 @@ function LoginForm() {
               required
               className="border-0 bg-transparent pl-8 text-base placeholder:text-white/70 focus-visible:ring-0 focus-visible:ring-offset-0"
             />
-             <Link
+            <Link
               href="/forgot-password"
               className="absolute right-0 top-3 text-sm text-white/70 transition-colors hover:text-white"
             >
@@ -261,16 +251,27 @@ function LoginForm() {
 
         <div className="flex flex-col items-center justify-center space-y-4">
           <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={handleGoogleError}
-              theme="filled_black"
-              shape="rectangular"
-              size="large"
-              width="320px"
-              useOneTap={true}
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            theme="filled_black"
+            shape="rectangular"
+            size="large"
+            width="320px"
+            useOneTap={true}
           />
 
-          <AppleLoginButton onLoginSuccess={(token) => handleToken(token, 'Apple')} />
+          {/* Apple Sign in */}
+          <Button
+            type="button"
+            className="w-[320px] rounded-full bg-white text-black hover:bg-zinc-200 py-6 font-semibold flex items-center justify-center gap-2"
+            onClick={() => {
+              // Start Apple login redirect — update to your backend’s Apple auth endpoint
+              window.location.href = `${API_BASE_URL}/api/appleauth/start`;
+            }}
+          >
+            <Apple className="h-5 w-5" />
+            <span>Sign in with Apple</span>
+          </Button>
         </div>
 
         <p className="mt-8 text-center text-sm text-white/70">
@@ -289,7 +290,13 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="flex h-screen w-full items-center justify-center bg-background"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+    <Suspense
+      fallback={
+        <div className="flex h-screen w-full items-center justify-center bg-background">
+          <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        </div>
+      }
+    >
       <LoginForm />
     </Suspense>
   );
