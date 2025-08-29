@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AuthBackgroundImage } from '@/app/shared/components/auth-background-image';
-import { KeyRound, Mail, Loader2, Apple } from 'lucide-react';
+import { KeyRound, Mail, Loader2 } from 'lucide-react';
 import { useToast } from '@/app/shared/hooks/use-toast';
 import { API_BASE_URL } from '@/app/shared/lib/api';
 import { jwtDecode } from 'jwt-decode';
@@ -20,6 +20,7 @@ interface DecodedToken {
   jti: string;
 }
 
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -27,16 +28,6 @@ function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
-  // This effect handles the token from the URL after external auth (Google, Apple)
-  useEffect(() => {
-    if (!searchParams) return;
-
-    const tokenFromUrl = searchParams.get('token');
-    if (tokenFromUrl) {
-      handleToken(tokenFromUrl, 'URL');
-    }
-  }, [router, searchParams, toast]);
 
   const handleToken = (token: string, source: string) => {
     localStorage.setItem('authToken', token);
@@ -56,6 +47,34 @@ function LoginForm() {
       router.replace('/login');
     }
   };
+
+  const handleGoogleSuccess = (credentialResponse: CredentialResponse) => {
+    if (credentialResponse.credential) {
+      handleExternalAuth(credentialResponse.credential);
+    }
+  };
+
+  const handleGoogleError = () => {
+    console.log('One Tap login error');
+    toast({
+      variant: 'destructive',
+      title: 'Login Failed',
+      description: 'Google authentication failed. Please try again.',
+    });
+  };
+
+  // This effect handles the token from the URL after external auth (Google, Apple)
+  useEffect(() => {
+    if (!searchParams) {
+      return;
+    }
+    const tokenFromUrl = searchParams.get('token');
+
+    if (tokenFromUrl) {
+      handleToken(tokenFromUrl, 'URL');
+    }
+  }, [router, searchParams, toast]);
+
 
   // Check for existing token on mount
   useEffect(() => {
@@ -96,7 +115,6 @@ function LoginForm() {
       if (!data.token || !data.user || !data.user.id || !data.user.email) {
         throw new Error('Invalid response received from server.');
       }
-
       handleToken(data.token, 'Google');
     } catch (error: any) {
       toast({
@@ -109,25 +127,10 @@ function LoginForm() {
     }
   };
 
-  const handleGoogleSuccess = (credentialResponse: CredentialResponse) => {
-    if (credentialResponse.credential) {
-      handleExternalAuth(credentialResponse.credential);
-    }
-  };
-
-  const handleGoogleError = () => {
-    console.log('One Tap login error');
-    toast({
-      variant: 'destructive',
-      title: 'Login Failed',
-      description: 'Google authentication failed. Please try again.',
-    });
-  };
-
   useGoogleOneTapLogin({
     onSuccess: handleGoogleSuccess,
     onError: handleGoogleError,
-    disabled: !!(searchParams && searchParams.get('token')),
+    disabled: !!(searchParams && searchParams.get('token'))
   });
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -137,7 +140,9 @@ function LoginForm() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/Auth/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           Email: email,
           Password: password,
@@ -173,10 +178,15 @@ function LoginForm() {
     }
   };
 
+  const handleAppleSignIn = () => {
+    // Redirect to your backend endpoint that initiates the Apple OAuth flow
+    window.location.href = `${API_BASE_URL}/api/auth/apple/signin`;
+  };
+
   return (
     <div className="relative flex min-h-screen items-center justify-center p-4">
       <AuthBackgroundImage />
-      <div className="relative z-10 mx-auto w-full max-w-md rounded-3xl bg-black/70 p-8 backdrop-blur-md">
+      <div className="relative z-10 mx-auto w-full max-w-md rounded-3xl bg-black/60 p-8 backdrop-blur-lg">
         <div className="mb-8 text-left">
           <h2 className="font-headline text-4xl font-bold leading-tight">
             Log into <br />
@@ -185,7 +195,7 @@ function LoginForm() {
         </div>
 
         <form className="space-y-6" onSubmit={handleSubmit}>
-          <div className="relative border-b border-white/40 py-2">
+          <div className="relative border-b border-white/40">
             <Mail className="absolute left-0 top-3 h-5 w-5 text-white/70" />
             <Input
               type="email"
@@ -197,7 +207,7 @@ function LoginForm() {
             />
           </div>
 
-          <div className="relative border-b border-white/40 py-2">
+          <div className="relative border-b border-white/40">
             <KeyRound className="absolute left-0 top-3 h-5 w-5 text-white/70" />
             <Input
               type="password"
@@ -215,13 +225,13 @@ function LoginForm() {
             </Link>
           </div>
 
-          <div className="flex items-center">
+          <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Checkbox
                 id="remember-me"
-                className="h-5 w-5 rounded border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                className="border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
               />
-              <Label htmlFor="remember-me" className="text-sm text-white/70">
+              <Label htmlFor="remember-me" className="text-white/70">
                 Remember me
               </Label>
             </div>
@@ -231,7 +241,7 @@ function LoginForm() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-full bg-zinc-900 py-6 text-base font-semibold hover:bg-zinc-800"
+              className="w-full rounded-full bg-stone-900 py-6 text-base font-semibold hover:bg-stone-800"
             >
               {isLoading ? <Loader2 className="animate-spin" /> : 'Log In'}
             </Button>
@@ -243,34 +253,40 @@ function LoginForm() {
             <span className="w-full border-t border-white/40" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-black/70 px-2 text-white/70">
+            <span className="bg-black/60 px-2 text-white/70">
               Or log in with
             </span>
           </div>
         </div>
 
-        <div className="flex flex-col items-center justify-center space-y-4">
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={handleGoogleError}
-            theme="filled_black"
-            shape="rectangular"
-            size="large"
-            width="320px"
-            useOneTap={true}
-          />
-
-          {/* Apple Sign in */}
+        <div className="flex flex-col items-center justify-center space-y-2">
+          <div className="w-full max-w-[320px]">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              theme="filled_black"
+              shape="rectangular"
+              size="large"
+              width="320px"
+            />
+          </div>
           <Button
-            type="button"
-            className="w-[320px] rounded-full bg-white text-black hover:bg-zinc-200 py-6 font-semibold flex items-center justify-center gap-2"
-            onClick={() => {
-              // Start Apple login redirect — update to your backend’s Apple auth endpoint
-              window.location.href = `${API_BASE_URL}/api/appleauth/start`;
-            }}
+            onClick={handleAppleSignIn}
+            variant="outline"
+            className="w-full max-w-[320px] h-[44px] bg-black text-white border-zinc-900 hover:bg-zinc-800 flex items-center justify-center gap-2 rounded-sm"
           >
-            <Apple className="h-5 w-5" />
-            <span>Sign in with Apple</span>
+            <svg
+              role="img"
+              width="20"
+              height="20"
+              aria-label="Apple logo"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path d="M12.032 6.815c-1.637 0-3.23.982-4.148.982-1.033 0-2.25-1.01-3.555-1.01-1.68 0-3.195 1.01-4.148 2.536-.963 1.526-.58 4.205 1.09 5.679.846.733 1.83 1.11 2.805 1.11 1.01 0 2.06-.374 2.89-.374.82 0 1.95.405 3.12.405 1.14 0 2.22-.405 2.92-.405.7 0 1.77.374 2.76.374 1.08 0 2.12-.416 2.93-1.11.8-.702 1.22-1.71 1.25-1.75-.02-.01-3.41-1.32-3.43-4.9-.02-2.684 2.24-4.024 2.4-4.164-.97-1.428-2.5-2.35-4.13-2.35-1.95 0-3.66 1.07-4.57 1.07zM11.815.35c.21 1.26-1.28 2.32-2.4 2.35-1.12-.03-2.2-1.29-2.4-2.38C6.795.21 8.265-.9 9.385-.93c1.11-.02 2.23 1.05 2.43 2.28z"/>
+            </svg>
+            <span className="font-semibold text-base">Sign in with Apple</span>
           </Button>
         </div>
 
@@ -290,13 +306,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex h-screen w-full items-center justify-center bg-background">
-          <Loader2 className="h-16 w-16 animate-spin text-primary" />
-        </div>
-      }
-    >
+    <Suspense fallback={<div className="flex h-screen w-full items-center justify-center bg-background"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
       <LoginForm />
     </Suspense>
   );
