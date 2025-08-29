@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -56,8 +57,15 @@ export default function AppleLoginButton({ onLoginSuccess }: { onLoginSuccess: (
 
     setIsLoading(true);
     try {
+      // The `signIn` method should be called on the AppleID.auth object
       const data = await AppleID.auth.signIn();
+
+      // The ID token is nested inside the authorization object
       const id_token = data.authorization.id_token;
+
+      if (!id_token) {
+        throw new Error('Apple did not provide an ID token.');
+      }
 
       // After successful sign-in with Apple, call the backend
       const response = await fetch(`${API_BASE_URL}/api/auth/apple/callback`, {
@@ -65,7 +73,8 @@ export default function AppleLoginButton({ onLoginSuccess }: { onLoginSuccess: (
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ id_token }), // Send the ID token to your backend
+          // Send the ID token to your backend
+          body: JSON.stringify({ id_token }),
       });
 
 
@@ -81,7 +90,8 @@ export default function AppleLoginButton({ onLoginSuccess }: { onLoginSuccess: (
         throw new Error('Backend did not return a valid token.');
       }
     } catch (error: any) {
-      if (error && error.error !== '1001') { // 1001 is user canceling
+      // Error code 1001 means the user cancelled the popup.
+      if (error && error.error !== '1001') {
         console.error('Apple Sign-In failed', error);
         toast({
           variant: 'destructive',
@@ -108,7 +118,7 @@ export default function AppleLoginButton({ onLoginSuccess }: { onLoginSuccess: (
             toast({ variant: 'destructive', title: 'Error', description: 'Failed to load Apple Sign-In script.' })
         }}
       />
-      <div style={{ width: '100%', maxWidth: '320px' }}>
+      <div className="w-full max-w-[320px]">
         <Button 
             onClick={handleSignIn} 
             disabled={!isAppleReady || isLoading}
