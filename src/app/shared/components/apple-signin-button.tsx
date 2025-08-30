@@ -5,14 +5,21 @@ import { Button } from '@/components/ui/button';
 
 export function AppleSignInButton() {
   const handleAppleSignIn = () => {
-    const clientId = process.env.NEXT_PUBLIC_APPLE_CLIENT_ID;
+    const clientId = process.env.NEXT_PUBLIC_APPLE_SERVICES_ID;
     const redirectUri = process.env.NEXT_PUBLIC_APPLE_REDIRECT_URI;
 
-    if (!clientId || !redirectUri) {
+    if (
+      !clientId ||
+      !redirectUri ||
+      clientId === 'YOUR_APPLE_SERVICES_ID_HERE'
+    ) {
       console.error(
-        'Apple Sign-In is not configured. Please set NEXT_PUBLIC_APPLE_CLIENT_ID and NEXT_PUBLIC_APPLE_REDIRECT_URI in your .env file.'
+        'Apple Sign-In is not configured. Please set NEXT_PUBLIC_APPLE_SERVICES_ID and NEXT_PUBLIC_APPLE_REDIRECT_URI in your .env file.'
       );
-      // Optionally, show a toast to the user
+      // Optionally, show a user-friendly error message
+      alert(
+        'Apple Sign-In is not configured correctly. Please contact support.'
+      );
       return;
     }
 
