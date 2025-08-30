@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { AuthBackgroundImage } from '@/app/shared/components/auth-background-image';
+import { AppleLoginButton } from '@/app/shared/components/apple-login-button';
 import { User, Mail, KeyRound, Loader2 } from 'lucide-react';
 import { useToast } from '@/app/shared/hooks/use-toast';
 import { API_BASE_URL } from '@/app/shared/lib/api';
@@ -139,10 +140,6 @@ export default function SignUpPage() {
     }
   };
 
-  const handleAppleSignIn = () => {
-    window.location.href = `${API_BASE_URL}/api/appleauth/start`;
-  };
-
   return (
     <div className="relative flex min-h-screen items-center justify-center p-4">
       <AuthBackgroundImage />
@@ -240,12 +237,7 @@ export default function SignUpPage() {
               size="large"
               width="320px"
           />
-          <Button
-            onClick={handleAppleSignIn}
-            className="w-full max-w-[320px] h-[44px] bg-black text-white border-black hover:bg-zinc-800 flex items-center justify-center gap-2 rounded-sm"
-          >
-            <span className="font-semibold text-base">Sign in with Apple</span>
-          </Button>
+          <AppleLoginButton />
         </div>
 
         <p className="mt-8 text-center text-sm text-white/70">
