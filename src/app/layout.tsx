@@ -44,12 +44,6 @@ export default function RootLayout({
 }>) {
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
-  if (!googleClientId) {
-    throw new Error(
-      'FATAL: NEXT_PUBLIC_GOOGLE_CLIENT_ID is not defined in environment variables. Google Authentication cannot work without it.'
-    );
-  }
-
   return (
     <html lang="en" className="dark">
       <head>
@@ -69,7 +63,7 @@ export default function RootLayout({
       <body
         className={`${ptSans.variable} ${playfairDisplay.variable} font-body antialiased`}
       >
-        <GoogleOAuthProvider clientId={googleClientId}>
+        <GoogleOAuthProvider clientId={googleClientId || ''}>
           {children}
           <Toaster />
         </GoogleOAuthProvider>
