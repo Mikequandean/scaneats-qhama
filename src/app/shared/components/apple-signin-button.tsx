@@ -1,16 +1,41 @@
 
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { API_BASE_URL } from '@/app/shared/lib/api';
+import { useToast } from '@/app/shared/hooks/use-toast';
 
 export function AppleSignInButton() {
+  const { toast } = useToast();
+  const [appleAuthUrl, setAppleAuthUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const servicesId = process.env.NEXT_PUBLIC_APPLE_SERVICES_ID;
+    const redirectUri = process.env.NEXT_PUBLIC_APPLE_REDIRECT_URI;
+
+    if (servicesId && redirectUri) {
+      const authUrl = `https://appleid.apple.com/auth/authorize?${new URLSearchParams({
+        response_type: 'code',
+        response_mode: 'form_post', // Important for the backend to receive the code
+        client_id: servicesId,
+        redirect_uri: redirectUri,
+        state: 'STATE_CSRF_TOKEN', // A CSRF token should be used in production
+        scope: 'name email',
+      }).toString()}`;
+      setAppleAuthUrl(authUrl);
+    }
+  }, []);
 
   const handleAppleSignIn = () => {
-    // The backend now handles building the Apple URL and redirecting the user.
-    const startUrl = `${API_BASE_URL}/api/auth/apple/start`;
-    // Redirect the user to our backend, which will then redirect to Apple.
-    window.location.href = startUrl;
+    if (appleAuthUrl) {
+      window.location.href = appleAuthUrl;
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Configuration Error',
+        description: 'Apple Sign-In is not configured correctly. Please contact support.',
+      });
+    }
   };
 
   return (
