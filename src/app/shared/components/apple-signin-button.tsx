@@ -2,8 +2,12 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { useEffect } from 'react';
+import { useToast } from '@/app/shared/hooks/use-toast';
 
 export function AppleSignInButton() {
+  const { toast } = useToast();
+
   const handleAppleSignIn = () => {
     const clientId = process.env.NEXT_PUBLIC_APPLE_SERVICES_ID;
     const redirectUri = process.env.NEXT_PUBLIC_APPLE_REDIRECT_URI;
@@ -11,23 +15,26 @@ export function AppleSignInButton() {
     if (
       !clientId ||
       !redirectUri ||
-      clientId === 'YOUR_APPLE_SERVICES_ID_HERE'
+      clientId === 'YOUR_APPLE_SERVICES_ID_HERE' ||
+      redirectUri === 'YOUR_APPLE_REDIRECT_URI_HERE'
     ) {
       console.error(
         'Apple Sign-In is not configured. Please set NEXT_PUBLIC_APPLE_SERVICES_ID and NEXT_PUBLIC_APPLE_REDIRECT_URI in your .env file.'
       );
-      // Optionally, show a user-friendly error message
-      alert(
-        'Apple Sign-In is not configured correctly. Please contact support.'
-      );
+      toast({
+        variant: 'destructive',
+        title: 'Configuration Error',
+        description: 'Apple Sign-In is not configured correctly. Please contact support.',
+      });
       return;
     }
 
+    // A unique state value should be generated for each sign-in request.
     const state = Math.random().toString(36).substring(2, 15);
-    localStorage.setItem('apple_auth_state', state);
 
     const scope = 'name email';
-    const responseType = 'code';
+    const responseType = 'code'; // Use 'code' for server-side validation
+    const responseMode = 'form_post'; // Recommended for security
 
     const authUrl =
       'https://appleid.apple.com/auth/authorize' +
@@ -36,8 +43,9 @@ export function AppleSignInButton() {
       `&response_type=${encodeURIComponent(responseType)}` +
       `&state=${encodeURIComponent(state)}` +
       `&scope=${encodeURIComponent(scope)}` +
-      '&response_mode=form_post';
+      `&response_mode=${encodeURIComponent(responseMode)}`;
 
+    // Redirect the user to Apple's sign-in page
     window.location.href = authUrl;
   };
 
@@ -45,18 +53,19 @@ export function AppleSignInButton() {
     <Button
       onClick={handleAppleSignIn}
       type="button"
-      className="w-full max-w-[320px] h-[44px] bg-black text-white border-black hover:bg-zinc-800 flex items-center justify-center gap-2 rounded-sm"
+      className="h-[44px] w-full max-w-[320px] rounded-sm border-black bg-black text-white hover:bg-zinc-800 flex items-center justify-center gap-2"
     >
       <svg
-        className="h-5 w-5"
-        fill="currentColor"
+        role="img"
+        width="20"
+        height="20"
         viewBox="0 0 24 24"
+        fill="currentColor"
         xmlns="http://www.w3.org/2000/svg"
-        aria-hidden="true"
       >
-        <path d="M12.016 16.12c-1.393 0-2.832-.823-3.886-2.454-1.048-1.631-.49-4.321.84-5.877a4.915 4.915 0 014.049-1.989c.219 0 .416.02.613.06-.11.02-.24.04-.33.04-.55 0-1.12-.119-1.7-.358a.48.48 0 00-.51.139c-1.07 1.258-1.685 2.857-1.685 4.547 0 2.279 1.154 3.498 1.843 3.498.49 0 1.02-.12 1.63-.338a.482.482 0 00.511-.63c.04-.1.06-.24.06-.339-.178.02-.357.02-.55.02a5.05 5.05 0 01-1.286-.16zm6.183-4.223c-.02-.1-.04-.2-.06-.318a4.945 4.945 0 00-3.32-2.932.482.482 0 00-.61.358c-.378 1.317-.84 2.595-1.528 3.734a.48.48 0 00.278.852c.47-.02.93-.16 1.35-.398.77-.358 1.28-.716 2.01-1.013a5.86 5.86 0 00.87-.398zm-1.843-6.52c1.33-1.474 2.22-3.37 2.22-5.377a.48.48 0 00-.47-.5h-.04c-1.55 0-3.26.88-4.43 2.158-.98 1.077-1.84 2.536-2.26 4.148a.483.483 0 00.41.59c.04.02.1.02.14.02.43 0 .8-.28.93-.658.55-1.533 1.28-2.858 2.42-3.759v.02z" />
+        <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.048-3.804 1.236-4.824 3.12C2.28 10.892.813 15.34 2.64 18.93c.948 1.835 2.565 2.952 4.284 2.952 1.62 0 2.28-.936 4.176-.936 1.896 0 2.52.936 4.14.936 1.716 0 3.264-1.116 4.212-2.928.828-1.524 1.2-3.036 1.224-3.132-.024-.012-2.316-.888-2.34-3.588.012-2.364 1.872-3.456 2.04-3.672-1.14-1.764-2.856-2.82-4.8-2.82-2.208 0-3.528 1.416-4.416 1.416zM11.18 3.092c.792-1.044 1.416-2.232 1.116-3.092-1.392.072-2.952.888-3.852 2.04-.84.984-1.584 2.304-1.296 3.552 1.584.132 3.024-.504 3.888-2.52z"></path>
       </svg>
-      <span className="font-semibold text-base">Sign in with Apple</span>
+      <span className="text-base font-semibold">Sign in with Apple</span>
     </Button>
   );
 }
