@@ -2,51 +2,15 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { useEffect } from 'react';
-import { useToast } from '@/app/shared/hooks/use-toast';
+import { API_BASE_URL } from '@/app/shared/lib/api';
 
 export function AppleSignInButton() {
-  const { toast } = useToast();
 
   const handleAppleSignIn = () => {
-    const clientId = process.env.NEXT_PUBLIC_APPLE_SERVICES_ID;
-    const redirectUri = process.env.NEXT_PUBLIC_APPLE_REDIRECT_URI;
-
-    if (
-      !clientId ||
-      !redirectUri ||
-      clientId === 'YOUR_APPLE_SERVICES_ID_HERE' ||
-      redirectUri === 'YOUR_APPLE_REDIRECT_URI_HERE'
-    ) {
-      console.error(
-        'Apple Sign-In is not configured. Please set NEXT_PUBLIC_APPLE_SERVICES_ID and NEXT_PUBLIC_APPLE_REDIRECT_URI in your .env file.'
-      );
-      toast({
-        variant: 'destructive',
-        title: 'Configuration Error',
-        description: 'Apple Sign-In is not configured correctly. Please contact support.',
-      });
-      return;
-    }
-
-    // A unique state value should be generated for each sign-in request.
-    const state = Math.random().toString(36).substring(2, 15);
-
-    const scope = 'name email';
-    const responseType = 'code'; // Use 'code' for server-side validation
-    const responseMode = 'form_post'; // Recommended for security
-
-    const authUrl =
-      'https://appleid.apple.com/auth/authorize' +
-      `?client_id=${encodeURIComponent(clientId)}` +
-      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-      `&response_type=${encodeURIComponent(responseType)}` +
-      `&state=${encodeURIComponent(state)}` +
-      `&scope=${encodeURIComponent(scope)}` +
-      `&response_mode=${encodeURIComponent(responseMode)}`;
-
-    // Redirect the user to Apple's sign-in page
-    window.location.href = authUrl;
+    // The backend now handles building the Apple URL and redirecting the user.
+    const startUrl = `${API_BASE_URL}/api/auth/apple/start`;
+    // Redirect the user to our backend, which will then redirect to Apple.
+    window.location.href = startUrl;
   };
 
   return (
