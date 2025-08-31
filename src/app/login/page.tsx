@@ -14,7 +14,6 @@ import { KeyRound, Mail, Loader2 } from 'lucide-react';
 import { useToast } from '@/app/shared/hooks/use-toast';
 import { API_BASE_URL } from '@/app/shared/lib/api';
 import { jwtDecode } from 'jwt-decode';
-import { AppleSignInButton } from '@/app/shared/components/apple-signin-button';
 
 interface DecodedToken {
   sub: string;
@@ -267,7 +266,6 @@ function LoginForm() {
               width="320px"
             />
           </div>
-          <AppleSignInButton />
         </div>
 
         <p className="mt-8 text-center text-sm text-white/70">
