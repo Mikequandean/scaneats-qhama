@@ -123,8 +123,8 @@ export default function PricingPage() {
 
     try {
       const payload = {
-        Email: email,
-        PlanCode: PAYSTACK_PLAN_CODE,
+        email: email,
+        planCode: PAYSTACK_PLAN_CODE,
       };
 
       const response = await fetch(
