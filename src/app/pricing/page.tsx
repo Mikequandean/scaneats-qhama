@@ -38,6 +38,7 @@ type GeoData = {
 };
 
 const ZAR_BASE_PRICE = 200;
+const PAYSTACK_PLAN_CODE = "PLN_so2f03hi5aa779d"; // Your actual plan code
 
 export default function PricingPage() {
   const router = useRouter();
@@ -121,6 +122,11 @@ export default function PricingPage() {
     }
 
     try {
+      const payload = {
+        Email: email,
+        PlanCode: PAYSTACK_PLAN_CODE,
+      };
+
       const response = await fetch(
         `${API_BASE_URL}/api/subscription/create`,
         {
@@ -129,10 +135,7 @@ export default function PricingPage() {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            Email: email,
-            PlanCode: 'PLN_so2f03hi5aa779d',
-          }),
+          body: JSON.stringify(payload),
         }
       );
 
