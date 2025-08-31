@@ -130,8 +130,8 @@ export default function PricingPage() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            email: email,
-            planCode: 'PLN_so2f03hi5aa779d', // Ensure this is a valid plan code in your Paystack account
+            Email: email,
+            PlanCode: 'PLN_so2f03hi5aa779d',
           }),
         }
       );
